@@ -60,6 +60,11 @@ public class HardcodeValueCommand extends AbstractCommand {
 			return Integer.toString(this.value);
 		}
 
+		// don't convert possible memory addresses
+		if ((this.value < 0) && ((this.value >>> 24) != 0x80)) {
+			return "-" + Util.hex(-this.value);
+		}
+
 		return Util.hex(this.value);
 	}
 

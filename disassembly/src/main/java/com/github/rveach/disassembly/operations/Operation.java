@@ -67,7 +67,7 @@ public enum Operation {
 		switch (this) {
 		case INDEX_SIGNED:
 		case INDEX_UNSIGNED:
-			return false;
+			return true;
 		case ADD_SIGNED:
 		case ADD_UNSIGNED:
 		case AND:
@@ -94,7 +94,7 @@ public enum Operation {
 		case SUBTRACT_SIGNED:
 		case SUBTRACT_UNSIGNED:
 		case XOR:
-			return true;
+			return false;
 		}
 
 		throw new IllegalStateException("Unknown Operation");
@@ -102,6 +102,22 @@ public enum Operation {
 
 	public boolean isSelfSignable() {
 		switch (this) {
+		case ADD_SIGNED:
+		case ADD_UNSIGNED:
+		case AND:
+		case DIVIDE_SIGNED:
+		case DIVIDE_UNSIGNED:
+		case MOD:
+		case MULTIPLY_SIGNED:
+		case MULTIPLY_UNSIGNED:
+		case OR:
+		case SHIFT_LEFT:
+		case SHIFT_RIGHT_ARITHMETIC:
+		case SHIFT_RIGHT_LOGICAL:
+		case SUBTRACT_SIGNED:
+		case SUBTRACT_UNSIGNED:
+		case XOR:
+			return true;
 		case ASSIGNMENT:
 		case INDEX_SIGNED:
 		case INDEX_UNSIGNED:
@@ -116,11 +132,32 @@ public enum Operation {
 		case LESS_THAN_UNSIGNED:
 		case NOT_EQUAL:
 			return false;
+		}
+
+		throw new IllegalStateException("Unknown Operation");
+	}
+
+	public boolean isEqualityOperation() {
+		switch (this) {
+		case EQUAL:
+		case GREATER_THAN_OR_EQUAL_SIGNED:
+		case GREATER_THAN_OR_EQUAL_UNSIGNED:
+		case GREATER_THAN_SIGNED:
+		case GREATER_THAN_UNSIGNED:
+		case LESS_THAN_OR_EQUAL_SIGNED:
+		case LESS_THAN_OR_EQUAL_UNSIGNED:
+		case LESS_THAN_SIGNED:
+		case LESS_THAN_UNSIGNED:
+		case NOT_EQUAL:
+			return true;
 		case ADD_SIGNED:
 		case ADD_UNSIGNED:
 		case AND:
+		case ASSIGNMENT:
 		case DIVIDE_SIGNED:
 		case DIVIDE_UNSIGNED:
+		case INDEX_SIGNED:
+		case INDEX_UNSIGNED:
 		case MOD:
 		case MULTIPLY_SIGNED:
 		case MULTIPLY_UNSIGNED:
@@ -131,7 +168,53 @@ public enum Operation {
 		case SUBTRACT_SIGNED:
 		case SUBTRACT_UNSIGNED:
 		case XOR:
-			return true;
+			return false;
+		}
+
+		throw new IllegalStateException("Unknown Operation");
+	}
+
+	public Operation getNot() {
+		switch (this) {
+		case EQUAL:
+			return NOT_EQUAL;
+		case GREATER_THAN_OR_EQUAL_SIGNED:
+			return LESS_THAN_SIGNED;
+		case GREATER_THAN_OR_EQUAL_UNSIGNED:
+			return LESS_THAN_UNSIGNED;
+		case GREATER_THAN_SIGNED:
+			return LESS_THAN_OR_EQUAL_SIGNED;
+		case GREATER_THAN_UNSIGNED:
+			return LESS_THAN_OR_EQUAL_UNSIGNED;
+		case LESS_THAN_OR_EQUAL_SIGNED:
+			return GREATER_THAN_SIGNED;
+		case LESS_THAN_OR_EQUAL_UNSIGNED:
+			return GREATER_THAN_UNSIGNED;
+		case LESS_THAN_SIGNED:
+			return GREATER_THAN_OR_EQUAL_SIGNED;
+		case LESS_THAN_UNSIGNED:
+			return GREATER_THAN_OR_EQUAL_UNSIGNED;
+		case NOT_EQUAL:
+			return EQUAL;
+		case ADD_SIGNED:
+		case ADD_UNSIGNED:
+		case AND:
+		case ASSIGNMENT:
+		case DIVIDE_SIGNED:
+		case DIVIDE_UNSIGNED:
+		case INDEX_SIGNED:
+		case INDEX_UNSIGNED:
+		case MOD:
+		case MULTIPLY_SIGNED:
+		case MULTIPLY_UNSIGNED:
+		case OR:
+		case SHIFT_LEFT:
+		case SHIFT_RIGHT_ARITHMETIC:
+		case SHIFT_RIGHT_LOGICAL:
+		case SUBTRACT_SIGNED:
+		case SUBTRACT_UNSIGNED:
+		case XOR:
+			break;
 		}
 
 		throw new IllegalStateException("Unknown Operation");

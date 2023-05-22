@@ -7,10 +7,7 @@ public abstract class AbstractCommand {
 	public abstract AbstractCommand deepClone();
 
 	public final boolean equals(AbstractCommand o) {
-		if (o == null) {
-			return false;
-		}
-		if (!getClass().equals(o.getClass())) {
+		if ((o == null) || !getClass().equals(o.getClass())) {
 			return false;
 		}
 

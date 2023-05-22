@@ -3,7 +3,6 @@ package com.github.rveach.disassembly.operations;
 import java.util.ArrayList;
 import java.util.List;
 
-// TODO: technically this should be 2 separate commands (call and assign)
 public final class JumpSubroutineCommand extends AbstractCommand {
 
 	private AbstractCommand target;

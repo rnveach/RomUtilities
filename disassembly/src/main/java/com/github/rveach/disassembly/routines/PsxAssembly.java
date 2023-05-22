@@ -377,7 +377,7 @@ public final class PsxAssembly {
 			break;
 		}
 
-		return new AssemblyRepresentation(address, assembly, 4, "ERROR", NopCommand.INSTANCE);
+		return new AssemblyRepresentation(address, assembly, 4, "ERROR", NopCommand.get());
 	}
 
 	private static AssemblyRepresentation getCustomCall(int address, int assembly, String displayCommand, int parameter,
@@ -416,10 +416,7 @@ public final class PsxAssembly {
 	private static AssemblyRepresentation getRtRsImm(int address, int assembly, String command, Operation operation) {
 		final String rt = REGISTERS[rt(assembly)];
 		final String rs = REGISTERS[rs(assembly)];
-		int imm = imm(assembly);
-		if ((imm & 0x8000) != 0) {
-			imm = -imm;
-		}
+		final int imm = imm(assembly);
 
 		return getCommand(address, assembly, concat(command, rt, rs, imm),
 				getAssignment(rt, getOperation(rs, operation, imm)));

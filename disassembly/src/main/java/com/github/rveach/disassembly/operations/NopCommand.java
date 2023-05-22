@@ -5,7 +5,7 @@ import java.util.List;
 
 public final class NopCommand extends AbstractCommand {
 
-	public static final NopCommand INSTANCE = new NopCommand();
+	private static final NopCommand INSTANCE = new NopCommand();
 
 	private NopCommand() {
 	}

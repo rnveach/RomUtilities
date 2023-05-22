@@ -65,7 +65,7 @@ public final class PsxAssemblySimplify {
 
 				hardcoded1.setValue(hardcoded1.getValue() + hardcoded2.getValue());
 
-				nextRepresentation.setRepresentation(NopCommand.INSTANCE);
+				nextRepresentation.setRepresentation(NopCommand.get());
 			}
 		}
 	}

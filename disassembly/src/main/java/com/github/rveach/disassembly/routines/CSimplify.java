@@ -1,5 +1,6 @@
 package com.github.rveach.disassembly.routines;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -13,6 +14,7 @@ import com.github.rveach.disassembly.operations.JumpSubroutineCommand;
 import com.github.rveach.disassembly.operations.LabelCommand;
 import com.github.rveach.disassembly.operations.MultiRegisterCommand;
 import com.github.rveach.disassembly.operations.NopCommand;
+import com.github.rveach.disassembly.operations.NotCommand;
 import com.github.rveach.disassembly.operations.Operation;
 import com.github.rveach.disassembly.operations.OperationCommand;
 import com.github.rveach.disassembly.operations.RegisterCommand;
@@ -21,9 +23,21 @@ public final class CSimplify {
 	private static boolean[] tracker;
 
 	/**
+	 * This class is all about simplifying multiple commands into a smaller amount.
+	 *
 	 * Different ways to simplify:
 	 *
 	 * 1)
+	 *
+	 * NOPs not connected to any code.
+	 *
+	 * 2)
+	 *
+	 * Unused labels should be removed.
+	 *
+	 * Note: Ignore label at position 0 since it is used for display purposes.
+	 *
+	 * 3)
 	 *
 	 * A = B ...<br />
 	 * A = C ...
@@ -34,7 +48,7 @@ public final class CSimplify {
 	 *
 	 * Note: The first line should be erased.
 	 *
-	 * 2)
+	 * 4)
 	 *
 	 * A = B<br />
 	 * A = A + C
@@ -48,27 +62,22 @@ public final class CSimplify {
 	 * Crossing labels is fine unless there is a go back and the register is
 	 * changed. Functions cannot be crossed unless we identify what the function
 	 * does and if it modifies any of the pertinent variables.
+	 *
+	 * 5)
+	 *
+	 * if (A) goto B;<br />
+	 * goto C;<br />
+	 * B:
+	 *
+	 * ...turns into...
+	 *
+	 * if (!A) goto C;<br />
+	 * B:
+	 *
 	 */
-
-	// TODO
-	// if (!!A) goto B
-
-	// TODO
-	// if (!A) goto B
-
-	// TODO
-	// if (A) goto B
-	// goto C
-	// B:
 
 	// TODO:
 	// A = (B + 1) + 1
-
-	// TODO:
-	// A[0xB][0xC]
-
-	// TODO:
-	// (A {equality} B) {equality} C
 
 	// TODO
 	// A = (size) B[C]
@@ -82,7 +91,7 @@ public final class CSimplify {
 		boolean result = false;
 
 		final List<AssemblyRepresentation> representations = holder.getAssemblyRepresentations();
-		final int size = representations.size();
+		int size = representations.size();
 
 		tracker = new boolean[size];
 
@@ -90,15 +99,100 @@ public final class CSimplify {
 			final AssemblyRepresentation representation = representations.get(i);
 			final AbstractCommand command = representation.getRepresentation();
 
+			// remove nops not connected to any code
+			if ((command instanceof NopCommand) && (representation.getAssemblySize() == 0)) {
+				representations.remove(i);
+
+				i--;
+				size--;
+				result = true;
+				continue;
+			}
+
+			// remove unused labels (except position 0)
+			if ((command instanceof LabelCommand) && (i != 0)) {
+				if (!isLabelUsed(representations, size, ((LabelCommand) command).getLocation())) {
+					representations.remove(i);
+
+					i--;
+					size--;
+					result = true;
+					continue;
+				}
+			}
+
+			if (command instanceof IfCommand) {
+				final IfCommand ifCommand = (IfCommand) command;
+
+				if (isIfGotoGotoLabelPattern(representations, i, size, ifCommand)) {
+					final AssemblyRepresentation gotoRepresentation = representations.get(i + 1);
+					final GotoCommand gotoCommand = (GotoCommand) gotoRepresentation.getRepresentation();
+
+					// update if's condition
+					ifCommand.setCondition(new NotCommand(ifCommand.getCondition()));
+
+					// update if's goto
+					ifCommand.setOperation(gotoCommand);
+
+					// remove goto as it was inlined
+					gotoRepresentation.setRepresentation(NopCommand.get());
+
+					i--;
+					result = true;
+					continue;
+				}
+			}
+
 			if (isRegisterAssignment(command)) {
-				result |= simplifyInitialRegisterAssignmentCommand(representations, i + 1, size, representation,
-						command);
+				if (simplifyInitialRegisterAssignmentCommand(representations, i + 1, size, representation, command)) {
+					i--;
+					result = true;
+					continue;
+				}
 			}
 
 			// TODO
 		}
 
 		return result;
+	}
+
+	private static boolean isIfGotoGotoLabelPattern(List<AssemblyRepresentation> representations, int i, int size,
+			IfCommand command) {
+		if ((i + 2) >= size) {
+			return false;
+		}
+
+		final AssemblyRepresentation gotoRepresentation = representations.get(i + 1);
+
+		final AbstractCommand gotoCommand = gotoRepresentation.getRepresentation();
+		if (!(gotoCommand instanceof GotoCommand)) {
+			return false;
+		}
+
+		final AssemblyRepresentation labelRepresentation = representations.get(i + 2);
+
+		final AbstractCommand labelCommand = labelRepresentation.getRepresentation();
+		if (!(labelCommand instanceof LabelCommand)) {
+			return false;
+		}
+
+		final AbstractCommand ifOperation = command.getOperation();
+		if (!(ifOperation instanceof GotoCommand)) {
+			return false;
+		}
+
+		final AbstractCommand ifGotoLocation = ((GotoCommand) ifOperation).getLocation();
+		if (!(ifGotoLocation instanceof HardcodeValueCommand)) {
+			return false;
+		}
+
+		// if's goto has to be the same place as the label
+		if (((HardcodeValueCommand) ifGotoLocation).getValue() != ((LabelCommand) labelCommand).getLocation()) {
+			return false;
+		}
+
+		return true;
 	}
 
 	private static boolean simplifyInitialRegisterAssignmentCommand(List<AssemblyRepresentation> representations, int i,
@@ -121,6 +215,11 @@ public final class CSimplify {
 
 			tracker[i] = true;
 
+			// we can't go pass a call, unless we can examine it too, so we treat it as
+			// unknown
+			if (nextCommand instanceof JumpSubroutineCommand) {
+				break;
+			}
 			if (nextCommand instanceof LabelCommand) {
 				// TODO: implementation
 				break;
@@ -138,7 +237,7 @@ public final class CSimplify {
 
 					if (!isUsedAgainBeforeAssignment(representations, gotoLocation + 1, size, originalAssignment,
 							false)) {
-						originalRepresentation.setRepresentation(NopCommand.INSTANCE);
+						originalRepresentation.setRepresentation(NopCommand.get());
 					}
 				}
 
@@ -157,7 +256,7 @@ public final class CSimplify {
 					((OperationCommand) nextCommand).swapRightOnly(originalAssignment, originalAssignnee);
 
 					// and wipe the original
-					originalRepresentation.setRepresentation(NopCommand.INSTANCE);
+					originalRepresentation.setRepresentation(NopCommand.get());
 					result = true;
 					break;
 				}
@@ -182,7 +281,7 @@ public final class CSimplify {
 					}
 
 					// and wipe the original
-					originalRepresentation.setRepresentation(NopCommand.INSTANCE);
+					originalRepresentation.setRepresentation(NopCommand.get());
 					result = true;
 				}
 				break;
@@ -195,7 +294,7 @@ public final class CSimplify {
 			}
 
 			// TODO: implementation
-			if ((nextCommand instanceof IfCommand) || (nextCommand instanceof JumpSubroutineCommand)) {
+			if ((nextCommand instanceof IfCommand)) {
 				break;
 			}
 		}
@@ -290,6 +389,12 @@ public final class CSimplify {
 		return result;
 	}
 
+	private static boolean isLabelUsed(List<AssemblyRepresentation> representations, int size, int location) {
+		final List<Integer> calls = findBranchesTo(representations, size, location);
+
+		return !calls.isEmpty();
+	}
+
 	private static int findLabelPosition(List<AssemblyRepresentation> representations, int size, int location) {
 		for (int i = 0; i < size; i++) {
 			final AssemblyRepresentation representation = representations.get(i);
@@ -301,6 +406,28 @@ public final class CSimplify {
 		}
 
 		throw new IllegalArgumentException("Could not find label: ");
+	}
+
+	private static List<Integer> findBranchesTo(List<AssemblyRepresentation> representations, int size, int location) {
+		final List<Integer> results = new ArrayList<>();
+
+		for (int i = 0; i < size; i++) {
+			final AssemblyRepresentation representation = representations.get(i);
+			final AbstractCommand command = representation.getRepresentation();
+
+			if ((command instanceof GotoCommand) || (command instanceof IfCommand)) {
+				for (final Integer label : command.getHardcodedLabels()) {
+					if (location == label) {
+						results.add(i);
+
+						break;
+					}
+				}
+			}
+
+		}
+
+		return results;
 	}
 
 	// TODO: limiting register reduces some simplifications

@@ -6,13 +6,19 @@ import java.util.List;
 public class OperationCommand extends AbstractCommand {
 
 	private AbstractCommand leftCommand;
-	private final Operation operation;
+	private Operation operation;
 	private AbstractCommand rightCommand;
 
 	public OperationCommand(AbstractCommand leftCommand, Operation operation, AbstractCommand rightCommand) {
 		this.leftCommand = leftCommand;
 		this.operation = operation;
 		this.rightCommand = rightCommand;
+	}
+
+	public void copyFrom(OperationCommand o) {
+		this.leftCommand = o.leftCommand;
+		this.operation = o.operation;
+		this.rightCommand = o.rightCommand;
 	}
 
 	@Override
@@ -24,15 +30,8 @@ public class OperationCommand extends AbstractCommand {
 	protected boolean equalsSpecific(AbstractCommand other) {
 		final OperationCommand o = (OperationCommand) other;
 
-		if (!this.leftCommand.equals(o.leftCommand)) {
-			return false;
-		}
-
-		if (this.operation != o.operation) {
-			return false;
-		}
-
-		return this.rightCommand.equals(o.rightCommand);
+		return this.leftCommand.equals(o.leftCommand) && (this.operation == o.operation)
+				&& this.rightCommand.equals(o.rightCommand);
 	}
 
 	@Override
@@ -98,7 +97,7 @@ public class OperationCommand extends AbstractCommand {
 
 	@Override
 	public String getDisplay() {
-		if (!this.operation.isIndex()) {
+		if (this.operation.isIndex()) {
 			return this.leftCommand.getDisplay() + "[" + this.rightCommand.getDisplay() + "]";
 		}
 
@@ -141,16 +140,20 @@ public class OperationCommand extends AbstractCommand {
 		this.leftCommand = leftCommand;
 	}
 
+	public Operation getOperation() {
+		return this.operation;
+	}
+
+	public void setOperation(Operation operation) {
+		this.operation = operation;
+	}
+
 	public AbstractCommand getRightCommand() {
 		return this.rightCommand;
 	}
 
 	public void setRightCommand(AbstractCommand rightCommand) {
 		this.rightCommand = rightCommand;
-	}
-
-	public Operation getOperation() {
-		return this.operation;
 	}
 
 }

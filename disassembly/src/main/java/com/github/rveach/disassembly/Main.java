@@ -11,6 +11,7 @@ import java.util.List;
 
 import com.github.rveach.disassembly.routines.AssemblySimplify;
 import com.github.rveach.disassembly.routines.CSimplify;
+import com.github.rveach.disassembly.routines.CSimplifyMore;
 import com.github.rveach.disassembly.routines.PsxAssembly;
 import com.github.rveach.disassembly.routines.PsxAssemblyFix;
 import com.github.rveach.disassembly.routines.PsxAssemblySimplify;
@@ -155,7 +156,9 @@ public final class Main {
 
 					// TODO: structurizeC
 
-					// TODO: while (changed) SimplifyCMore();
+					while (CSimplifyMore.execute(holder)) {
+						// nothing to do
+					}
 
 					holder.output(writer, this.assemblyType);
 				}
