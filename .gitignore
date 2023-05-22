@@ -1,0 +1,12 @@
+# Eclipse files
+
+.metadata/
+target/
+.classpath
+org.eclipse.core.resources.prefs
+org.eclipse.m2e.core.prefs
+.project
+
+# Game Specific
+
+/Khamrai
