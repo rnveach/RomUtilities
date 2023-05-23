@@ -2,6 +2,7 @@ package com.github.rveach.disassembly.routines;
 
 import java.util.List;
 
+import com.github.rveach.disassembly.AssemblyIterator;
 import com.github.rveach.disassembly.AssemblyRepresentation;
 import com.github.rveach.disassembly.Holder;
 import com.github.rveach.disassembly.operations.AbstractCommand;
@@ -15,20 +16,16 @@ public final class AssemblySimplify {
 	}
 
 	public static void execute(Holder holder) {
-		final List<AssemblyRepresentation> representations = holder.getAssemblyRepresentations();
 		final List<Integer> labels = new UniqueSortedList<>();
-		int size = representations.size();
+		final AssemblyIterator iterator = holder.getAssemblyRepresentationsIterator();
 
-		for (int i = 0; i < size; i++) {
-			final AssemblyRepresentation assembly = representations.get(i);
+		while (iterator.hasNext()) {
+			final AssemblyRepresentation assembly = iterator.next();
 			AbstractCommand representation = assembly.getRepresentation();
 
 			// split multiples
 			if (representation instanceof MultipleCommands) {
 				final AbstractCommand[] commands = ((MultipleCommands) representation).getCommands();
-
-				representations.remove(i);
-
 				boolean first = true;
 
 				for (final AbstractCommand command : commands) {
@@ -41,10 +38,7 @@ public final class AssemblySimplify {
 					} else {
 						final AssemblyRepresentation item = new AssemblyRepresentation(command);
 
-						representations.add(i, item);
-
-						i++;
-						size++;
+						iterator.add(item);
 					}
 				}
 			}
@@ -53,22 +47,21 @@ public final class AssemblySimplify {
 			labels.addAll(representation.getHardcodedLabels());
 		}
 
-		addLabels(representations, labels, size);
+		addLabels(iterator, labels);
 	}
 
-	private static void addLabels(List<AssemblyRepresentation> representations, List<Integer> labels, int size) {
+	private static void addLabels(AssemblyIterator iterator, List<Integer> labels) {
 		if (!labels.isEmpty()) {
 			boolean first = true;
 
-			for (int i = 0; i < size; i++) {
-				final AssemblyRepresentation assembly = representations.get(i);
+			iterator.resetPosition();
+
+			while (iterator.hasNext()) {
+				final AssemblyRepresentation assembly = iterator.next();
 				final int address = assembly.getAddress();
 
 				if ((labels.contains(address)) || (first)) {
-					representations.add(i, getLabel(address));
-
-					i++;
-					size++;
+					iterator.add(0, getLabel(address));
 				}
 
 				first = false;

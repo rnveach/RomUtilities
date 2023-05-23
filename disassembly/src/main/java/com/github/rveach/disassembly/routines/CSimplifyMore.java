@@ -60,6 +60,9 @@ public final class CSimplifyMore {
 	 * D = E + F
 	 */
 
+	// TODO:
+	// A = (B + 1) + 1
+
 	private CSimplifyMore() {
 	}
 
@@ -67,10 +70,8 @@ public final class CSimplifyMore {
 		boolean result = false;
 
 		final List<AssemblyRepresentation> representations = holder.getAssemblyRepresentations();
-		final int size = representations.size();
 
-		for (int i = 0; i < size; i++) {
-			final AssemblyRepresentation representation = representations.get(i);
+		for (final AssemblyRepresentation representation : representations) {
 			final AbstractCommand command = representation.getRepresentation();
 
 			if (command instanceof IfCommand) {

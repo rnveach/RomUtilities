@@ -1,7 +1,6 @@
 package com.github.rveach.disassembly.routines;
 
-import java.util.List;
-
+import com.github.rveach.disassembly.AssemblyIterator;
 import com.github.rveach.disassembly.AssemblyRepresentation;
 import com.github.rveach.disassembly.Holder;
 import com.github.rveach.disassembly.operations.AbstractCommand;
@@ -16,14 +15,13 @@ public final class PsxAssemblySimplify {
 	}
 
 	public static void execute(Holder holder) {
-		final List<AssemblyRepresentation> representations = holder.getAssemblyRepresentations();
-		final int size = representations.size();
-
 		final AbstractCommand r0SwapFrom = new RegisterCommand(PsxAssembly.REGISTERS[0]);
 		final AbstractCommand r0SwapTo = new HardcodeValueCommand(0);
 
-		for (int i = 0; i < size; i++) {
-			final AssemblyRepresentation representation = representations.get(i);
+		final AssemblyIterator iterator = holder.getAssemblyRepresentationsIterator();
+
+		while (iterator.hasNext()) {
+			final AssemblyRepresentation representation = iterator.next();
 			final AbstractCommand command = representation.getRepresentation();
 			final int assembly = representation.getAssembly();
 
@@ -33,19 +31,20 @@ public final class PsxAssemblySimplify {
 			// TODO: '0x0 = '
 
 			// combine lui and ori/addiu
-			combineLuiAddiuOri(representations, i, command, assembly);
+			combineLuiAddiuOri(iterator, command, assembly);
 		}
 	}
 
-	private static void combineLuiAddiuOri(List<AssemblyRepresentation> representations, int i, AbstractCommand command,
-			int assembly) {
+	private static void combineLuiAddiuOri(AssemblyIterator iterator, AbstractCommand command, int assembly) {
 		if ((assembly >>> 26) == 15) {
-			final AssemblyRepresentation nextRepresentation = representations.get(i + 1);
+			final AssemblyRepresentation nextRepresentation = iterator.get(1);
 			final AbstractCommand nextCommand = nextRepresentation.getRepresentation();
 
 			if ((nextRepresentation.getAssemblyDisplay().startsWith("addiu "))
 					|| (nextRepresentation.getAssemblyDisplay().startsWith("ori "))) {
 				combineWithLui(command, nextRepresentation, nextCommand);
+
+				iterator.next();
 			}
 		}
 	}

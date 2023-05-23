@@ -1,7 +1,6 @@
 package com.github.rveach.disassembly.routines;
 
-import java.util.List;
-
+import com.github.rveach.disassembly.AssemblyIterator;
 import com.github.rveach.disassembly.AssemblyRepresentation;
 import com.github.rveach.disassembly.Holder;
 import com.github.rveach.disassembly.operations.AbstractCommand;
@@ -57,25 +56,21 @@ public final class PsxAssemblyFix {
 	}
 
 	public static void execute(Holder holder) {
-		final List<AssemblyRepresentation> representations = holder.getAssemblyRepresentations();
+		AssemblyIterator iterator = holder.getAssemblyRepresentationsIterator();
 
-		for (int i = 0; i < (representations.size() - 1); i++) {
-			final AssemblyRepresentation representation = representations.get(i);
+		while (iterator.hasNext(1)) {
+			final AssemblyRepresentation representation = iterator.next();
 			final AbstractCommand command = representation.getRepresentation();
 
 			// re-order branches as they are actually delayed
-			i = reorderBranches(representations, i, representation, command);
+			iterator = reorderBranches(iterator, representation, command);
 		}
 	}
 
-	private static int reorderBranches(List<AssemblyRepresentation> representations, int i,
-			AssemblyRepresentation representation, AbstractCommand command) {
-		int nextI = i;
-
+	private static AssemblyIterator reorderBranches(AssemblyIterator iterator, AssemblyRepresentation representation,
+			AbstractCommand command) {
 		if ((command instanceof IfCommand) || (command instanceof GotoCommand)) {
-			nextI++;
-
-			AssemblyRepresentation nextRepresentation = representations.get(nextI);
+			AssemblyRepresentation nextRepresentation = iterator.get(1);
 			AbstractCommand nextCommand = nextRepresentation.getRepresentation();
 			LabelCommand labelCommand = null;
 
@@ -84,44 +79,43 @@ public final class PsxAssemblyFix {
 
 				labelCommand = (LabelCommand) nextCommand;
 
-				nextI++;
-				nextRepresentation = representations.get(nextI);
+				nextRepresentation = iterator.get(2);
 				nextCommand = nextRepresentation.getRepresentation();
 			}
 
 			// ignore if next command is nop as they don't do anything
-			if (nextCommand instanceof NopCommand) {
-				return i;
-			}
-			// more code is needed if next command has a delay too
-			if ((nextCommand instanceof IfCommand) || (nextCommand instanceof GotoCommand)) {
-				throw new IllegalStateException("Mulitple delay commands not implemented");
-			}
+			if (!(nextCommand instanceof NopCommand)) {
+				// more code is needed if next command has a delay too
+				if ((nextCommand instanceof IfCommand) || (nextCommand instanceof GotoCommand)) {
+					throw new IllegalStateException("Mulitple delay commands not implemented");
+				}
 
-			final boolean specialSwapNeeded;
+				final boolean specialSwapNeeded;
 
-			// determine if a special swap is necessary where commands have to be
-			// re-ordered, but re-ordering them changes the logic of the code so we have to
-			// find a work around
+				// determine if a special swap is necessary where commands have to be
+				// re-ordered, but re-ordering them changes the logic of the code so we have to
+				// find a work around
 
-			if (labelCommand != null) {
-				specialSwapNeeded = true;
-			} else {
-				specialSwapNeeded = isSpecialSwapNeeded(command, nextCommand);
-			}
+				if (labelCommand != null) {
+					specialSwapNeeded = true;
+				} else {
+					specialSwapNeeded = isSpecialSwapNeeded(command, nextCommand);
+				}
 
-			if (specialSwapNeeded) {
-				nextI = applySpecialSwap(representations, i, (IfCommand) command, nextI, nextRepresentation,
-						nextCommand, labelCommand);
-			} else {
-				// normal swap of order
+				if (specialSwapNeeded) {
+					applySpecialSwap(iterator, (IfCommand) command, nextRepresentation, nextCommand, labelCommand);
+				} else {
+					// normal swap of order
 
-				nextRepresentation.setRepresentation(command);
-				representation.setRepresentation(nextCommand);
+					nextRepresentation.setRepresentation(command);
+					representation.setRepresentation(nextCommand);
+
+					iterator.next();
+				}
 			}
 		}
 
-		return nextI;
+		return iterator;
 	}
 
 	private static boolean isSpecialSwapNeeded(final AbstractCommand command, AbstractCommand nextCommand) {
@@ -149,32 +143,29 @@ public final class PsxAssemblyFix {
 		return result;
 	}
 
-	private static int applySpecialSwap(List<AssemblyRepresentation> representations, int i, IfCommand ifCommand,
-			int nextI, AssemblyRepresentation nextRepresentation, AbstractCommand nextCommand,
-			LabelCommand labelCommand) {
+	private static void applySpecialSwap(AssemblyIterator iterator, IfCommand ifCommand,
+			AssemblyRepresentation nextRepresentation, AbstractCommand nextCommand, LabelCommand labelCommand) {
 		// if statement must be transformed (see 2b in javadoc)
 
 		// apply 'not' to original condition
 		ifCommand.setCondition(new NotCommand(ifCommand.getCondition()));
 		// duplicate next command
-		representations.add(i + 1, new AssemblyRepresentation(nextCommand.deepClone()));
+		iterator.add(new AssemblyRepresentation(nextCommand.deepClone()));
 		// add original goto by itself
-		representations.add(i + 2, new AssemblyRepresentation(ifCommand.getOperation().deepClone()));
+		iterator.add(new AssemblyRepresentation(ifCommand.getOperation().deepClone()));
 
 		if (labelCommand == null) {
 			// create new label and add it
 
 			labelCommand = new LabelCommand(nextRepresentation.getAddress());
 
-			representations.add(i + 3, new AssemblyRepresentation(labelCommand));
+			iterator.add(new AssemblyRepresentation(labelCommand));
+		} else {
+			iterator.next();
 		}
 
 		// update if statement for new label
 		((GotoCommand) ifCommand.getOperation()).setLocation(new HardcodeValueCommand(labelCommand.getLocation()));
-
-		nextI += 3;
-
-		return nextI;
 	}
 
 }

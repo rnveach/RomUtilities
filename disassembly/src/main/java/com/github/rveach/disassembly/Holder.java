@@ -10,6 +10,10 @@ public final class Holder {
 	public Holder() {
 	}
 
+	public AssemblyIterator getAssemblyRepresentationsIterator() {
+		return new AssemblyIterator(this.assemblyRepresentations);
+	}
+
 	public List<AssemblyRepresentation> getAssemblyRepresentations() {
 		return this.assemblyRepresentations;
 	}
