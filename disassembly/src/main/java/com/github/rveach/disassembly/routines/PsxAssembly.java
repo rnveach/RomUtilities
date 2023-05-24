@@ -511,7 +511,7 @@ public final class PsxAssembly {
 	}
 
 	private static String concat(String command, String s1, String s2) {
-		return command + s2 + ", " + s1;
+		return command + s1 + ", " + s2;
 	}
 
 	private static String concat(String command, String s1, int i) {
