@@ -12,6 +12,7 @@ import java.util.List;
 import com.github.rveach.disassembly.routines.AssemblySimplify;
 import com.github.rveach.disassembly.routines.CSimplify;
 import com.github.rveach.disassembly.routines.CSimplifyMore;
+import com.github.rveach.disassembly.routines.CStructurize;
 import com.github.rveach.disassembly.routines.PsxAssembly;
 import com.github.rveach.disassembly.routines.PsxAssemblyFix;
 import com.github.rveach.disassembly.routines.PsxAssemblySimplify;
@@ -150,11 +151,19 @@ public final class Main {
 						break;
 					}
 
-					while (CSimplify.execute(holder)) {
-						// nothing to do
-					}
+					boolean changed;
 
-					// TODO: structurizeC
+					do {
+						changed = false;
+
+						while (CSimplify.execute(holder)) {
+							changed = true;
+						}
+
+						while (CStructurize.execute(holder)) {
+							changed = true;
+						}
+					} while (changed);
 
 					while (CSimplifyMore.execute(holder)) {
 						// nothing to do

@@ -43,7 +43,7 @@ public abstract class AbstractVisitor<T extends AbstractVisitor<?>> {
 
 	protected abstract boolean visit(RegisterCommand registerCommand);
 
-	protected void begin() {
+	protected void beginInit() {
 		// to be overridden
 	}
 
@@ -53,7 +53,7 @@ public abstract class AbstractVisitor<T extends AbstractVisitor<?>> {
 
 	@SuppressWarnings("unchecked")
 	public T begin(AbstractCommand command) {
-		begin();
+		beginInit();
 
 		recurse(command);
 
@@ -127,8 +127,8 @@ public abstract class AbstractVisitor<T extends AbstractVisitor<?>> {
 			final OperationCommand converted = (OperationCommand) command;
 
 			if (visit(converted)) {
-				recurse(converted.getLeftCommand());
-				recurse(converted.getRightCommand());
+				recurse(converted.getLeftOperand());
+				recurse(converted.getRightOperand());
 			}
 		} else if (command instanceof RegisterCommand) {
 			final RegisterCommand converted = (RegisterCommand) command;

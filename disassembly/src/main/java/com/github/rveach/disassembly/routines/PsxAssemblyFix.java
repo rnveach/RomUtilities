@@ -130,7 +130,7 @@ public final class PsxAssemblyFix {
 			final AbstractCommand condition = ((IfCommand) command).getCondition();
 
 			if (operation.getOperation() == Operation.ASSIGNMENT) {
-				final AbstractCommand left = operation.getLeftCommand();
+				final AbstractCommand left = operation.getLeftOperand();
 
 				result = condition.contains(left);
 			} else {

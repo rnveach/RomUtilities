@@ -10,6 +10,8 @@ import com.github.rveach.disassembly.operations.OperationCommand;
 import com.github.rveach.disassembly.routines.subroutines.SimplifyAddingNegativesVisitor;
 import com.github.rveach.disassembly.routines.subroutines.SimplifyDoubleEqualityVisitor;
 import com.github.rveach.disassembly.routines.subroutines.SimplifyNotVisitor;
+import com.github.rveach.disassembly.routines.subroutines.SimplifyRightHardcodeVisitor;
+import com.github.rveach.disassembly.routines.subroutines.SimplifySomeHardcodeValuesVisitor;
 
 public final class CSimplifyMore {
 
@@ -58,10 +60,22 @@ public final class CSimplifyMore {
 	 *
 	 * A = B - C<br />
 	 * D = E + F
+	 *
+	 * 5)
+	 *
+	 * 0 {operator} A
+	 *
+	 * ...turns into...
+	 *
+	 * A {operator} 0
+	 *
+	 * Note: Operator must allow the operands to be interchangeable.
+	 *
+	 * 6)
+	 *
+	 * Various hardcoded number simplifications. See
+	 * {@link SimplifySomeHardcodeValuesVisitor}.
 	 */
-
-	// TODO:
-	// A = (B + 1) + 1
 
 	private CSimplifyMore() {
 	}
@@ -78,7 +92,11 @@ public final class CSimplifyMore {
 				result |= SimplifyNotVisitor.get().begin(command).getResult();
 			}
 			if ((command instanceof IfCommand) || (command instanceof OperationCommand)) {
+				result |= SimplifyRightHardcodeVisitor.get().begin(command).getResult();
+
 				result |= SimplifyDoubleEqualityVisitor.get().begin(command).getResult();
+
+				result |= SimplifySomeHardcodeValuesVisitor.get().begin(command).getResult();
 
 				result |= SimplifyAddingNegativesVisitor.get().begin(command).getResult();
 			}

@@ -33,7 +33,7 @@ public class SimplifyDoubleEqualityVisitor extends AbstractParentVisitor<Simplif
 	}
 
 	@Override
-	protected void begin() {
+	protected void beginInit() {
 		this.result = false;
 	}
 
@@ -99,13 +99,13 @@ public class SimplifyDoubleEqualityVisitor extends AbstractParentVisitor<Simplif
 			final Operation parentOp = parentOperationCommand.getOperation();
 
 			if ((operationCommand.getOperation().isEqualityOperation()) && (parentOp.isEqualityOperation())) {
-				final boolean originalFromLeft = (parentOperationCommand.getLeftCommand() == operationCommand);
+				final boolean originalFromLeft = (parentOperationCommand.getLeftOperand() == operationCommand);
 				final AbstractCommand comparingTo;
 
 				if (originalFromLeft) {
-					comparingTo = parentOperationCommand.getRightCommand();
+					comparingTo = parentOperationCommand.getRightOperand();
 				} else {
-					comparingTo = parentOperationCommand.getLeftCommand();
+					comparingTo = parentOperationCommand.getLeftOperand();
 				}
 
 				if (comparingTo instanceof HardcodeValueCommand) {

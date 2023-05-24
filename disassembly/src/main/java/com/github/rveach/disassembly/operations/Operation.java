@@ -219,4 +219,41 @@ public enum Operation {
 
 		throw new IllegalStateException("Unknown Operation");
 	}
+
+	public boolean isLeftRightOperandsInterchangeable() {
+		switch (this) {
+		case ADD_SIGNED:
+		case ADD_UNSIGNED:
+		case AND:
+		case EQUAL:
+		case MULTIPLY_SIGNED:
+		case MULTIPLY_UNSIGNED:
+		case NOT_EQUAL:
+		case OR:
+		case SUBTRACT_SIGNED:
+		case SUBTRACT_UNSIGNED:
+		case XOR:
+			return true;
+		case ASSIGNMENT:
+		case DIVIDE_SIGNED:
+		case DIVIDE_UNSIGNED:
+		case GREATER_THAN_OR_EQUAL_SIGNED:
+		case GREATER_THAN_OR_EQUAL_UNSIGNED:
+		case GREATER_THAN_SIGNED:
+		case GREATER_THAN_UNSIGNED:
+		case INDEX_SIGNED:
+		case INDEX_UNSIGNED:
+		case LESS_THAN_OR_EQUAL_SIGNED:
+		case LESS_THAN_OR_EQUAL_UNSIGNED:
+		case LESS_THAN_SIGNED:
+		case LESS_THAN_UNSIGNED:
+		case MOD:
+		case SHIFT_LEFT:
+		case SHIFT_RIGHT_ARITHMETIC:
+		case SHIFT_RIGHT_LOGICAL:
+			return false;
+		}
+
+		throw new IllegalStateException("Unknown Operation");
+	}
 }

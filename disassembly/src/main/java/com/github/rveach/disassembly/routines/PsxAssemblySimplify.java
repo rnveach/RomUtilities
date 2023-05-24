@@ -11,6 +11,21 @@ import com.github.rveach.disassembly.operations.RegisterCommand;
 
 public final class PsxAssemblySimplify {
 
+	/**
+	 * This class is all about simplifying very general PSX-specific assembly
+	 * display.
+	 *
+	 * Different ways to simplify:
+	 *
+	 * 1)
+	 *
+	 * Any usage of $r0 is turned into 0x0.
+	 *
+	 * 2)
+	 *
+	 * lui and ori/addiu consecutive commands are turned into a single load.
+	 */
+
 	private PsxAssemblySimplify() {
 	}
 
@@ -55,12 +70,12 @@ public final class PsxAssemblySimplify {
 		final OperationCommand assignment2 = ((OperationCommand) nextCommand);
 
 		// assignment to same variable
-		if (assignment1.getLeftCommand().equals(assignment2.getLeftCommand())) {
-			final OperationCommand operation2 = (OperationCommand) assignment2.getLeftCommand();
+		if (assignment1.getLeftOperand().equals(assignment2.getLeftOperand())) {
+			final OperationCommand operand2 = (OperationCommand) assignment2.getLeftOperand();
 
-			if (assignment1.getLeftCommand().equals(operation2.getLeftCommand())) {
-				final HardcodeValueCommand hardcoded1 = (HardcodeValueCommand) assignment1.getRightCommand();
-				final HardcodeValueCommand hardcoded2 = (HardcodeValueCommand) operation2.getRightCommand();
+			if (assignment1.getLeftOperand().equals(operand2.getLeftOperand())) {
+				final HardcodeValueCommand hardcoded1 = (HardcodeValueCommand) assignment1.getRightOperand();
+				final HardcodeValueCommand hardcoded2 = (HardcodeValueCommand) operand2.getRightOperand();
 
 				hardcoded1.setValue(hardcoded1.getValue() + hardcoded2.getValue());
 

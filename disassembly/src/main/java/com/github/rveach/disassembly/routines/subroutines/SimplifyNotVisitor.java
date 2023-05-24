@@ -32,7 +32,7 @@ public final class SimplifyNotVisitor extends AbstractParentVisitor<SimplifyNotV
 	}
 
 	@Override
-	protected void begin() {
+	protected void beginInit() {
 		this.result = false;
 	}
 

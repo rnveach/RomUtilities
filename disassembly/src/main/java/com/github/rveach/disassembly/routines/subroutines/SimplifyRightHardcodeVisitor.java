@@ -18,16 +18,16 @@ import com.github.rveach.disassembly.operations.RegisterCommand;
 import com.github.rveach.disassembly.visitors.AbstractVisitor;
 
 /**
- * This simplifies subtracting or adding a negative number to make it positive
- * and flip the operator. Result is {@code true} if a change was made.
+ * This swaps operands so the hardcoded value is on the right, if the operator
+ * allows it. Result is {@code true} if a change was made.
  */
-public class SimplifyAddingNegativesVisitor extends AbstractVisitor<SimplifyAddingNegativesVisitor> {
+public final class SimplifyRightHardcodeVisitor extends AbstractVisitor<SimplifyRightHardcodeVisitor> {
 
 	private boolean result;
 
-	private static final SimplifyAddingNegativesVisitor INSTANCE = new SimplifyAddingNegativesVisitor();
+	private static final SimplifyRightHardcodeVisitor INSTANCE = new SimplifyRightHardcodeVisitor();
 
-	public static SimplifyAddingNegativesVisitor get() {
+	public static SimplifyRightHardcodeVisitor get() {
 		return INSTANCE;
 	}
 
@@ -93,27 +93,17 @@ public class SimplifyAddingNegativesVisitor extends AbstractVisitor<SimplifyAddi
 
 	@Override
 	protected boolean visit(OperationCommand operationCommand) {
+		final AbstractCommand leftOperand = operationCommand.getLeftOperand();
 		final AbstractCommand rightOperand = operationCommand.getRightOperand();
 
-		if (rightOperand instanceof HardcodeValueCommand) {
-			final HardcodeValueCommand hardcoded = (HardcodeValueCommand) rightOperand;
-			final int value = ((HardcodeValueCommand) rightOperand).getValue();
+		if ((leftOperand instanceof HardcodeValueCommand) && (!(rightOperand instanceof HardcodeValueCommand))) {
+			final Operation operation = operationCommand.getOperation();
 
-			// don't convert possibly memory addresses
-			if ((value < 0) && ((value >>> 24) != 0x80)) {
-				final Operation operation = operationCommand.getOperation();
+			if (operation.isLeftRightOperandsInterchangeable()) {
+				operationCommand.setLeftOperand(rightOperand);
+				operationCommand.setRightOperand(leftOperand);
 
-				if ((operation == Operation.ADD_SIGNED) || (operation == Operation.ADD_UNSIGNED)) {
-					operationCommand.setOperation(operation == Operation.ADD_SIGNED ? Operation.SUBTRACT_SIGNED
-							: Operation.SUBTRACT_UNSIGNED);
-
-					hardcoded.setValue(-value);
-				} else if ((operation == Operation.SUBTRACT_SIGNED) || (operation == Operation.SUBTRACT_UNSIGNED)) {
-					operationCommand.setOperation(
-							operation == Operation.SUBTRACT_SIGNED ? Operation.ADD_SIGNED : Operation.ADD_UNSIGNED);
-
-					hardcoded.setValue(-value);
-				}
+				this.result = true;
 			}
 		}
 

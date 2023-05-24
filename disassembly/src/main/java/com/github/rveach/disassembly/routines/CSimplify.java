@@ -1,6 +1,5 @@
 package com.github.rveach.disassembly.routines;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -74,21 +73,7 @@ public final class CSimplify {
 	 *
 	 * if (!A) goto C;<br />
 	 * B:
-	 *
 	 */
-
-	// TODO:
-	// if (...) goto ...
-	// A...
-	// goto B;
-	// ...
-	// goto C;
-	// B:
-
-	// TODO
-	// A = (size) B[C]
-	// B++;
-	// ((size) $B[C]) = A
 
 	private CSimplify() {
 	}
@@ -117,7 +102,7 @@ public final class CSimplify {
 
 			// remove unused labels
 			if (command instanceof LabelCommand) {
-				if (!isLabelUsed(iterator.getList(), ((LabelCommand) command).getLocation())) {
+				if (!isLabelUsed(iterator, ((LabelCommand) command).getLocation())) {
 					iterator.remove();
 
 					result = true;
@@ -156,8 +141,6 @@ public final class CSimplify {
 					continue;
 				}
 			}
-
-			// TODO
 		}
 
 		return result;
@@ -204,8 +187,8 @@ public final class CSimplify {
 			AssemblyRepresentation originalRepresentation, AbstractCommand originalCommand) {
 		boolean result = false;
 
-		final AbstractCommand originalAssignment = ((OperationCommand) originalCommand).getLeftCommand();
-		final AbstractCommand originalAssignnee = ((OperationCommand) originalCommand).getRightCommand();
+		final AbstractCommand originalAssignment = ((OperationCommand) originalCommand).getLeftOperand();
+		final AbstractCommand originalAssignnee = ((OperationCommand) originalCommand).getRightOperand();
 		final List<AbstractCommand> originalAssignneeRegisters = originalAssignnee.getRegistersInvolved();
 
 		// initialize tracker
@@ -235,8 +218,7 @@ public final class CSimplify {
 				final AbstractCommand location = ((GotoCommand) nextCommand).getLocation();
 
 				if (location instanceof HardcodeValueCommand) {
-					final int gotoLocation = findLabelPosition(iterator.getList(),
-							((HardcodeValueCommand) location).getValue());
+					final int gotoLocation = iterator.findLabelPosition(((HardcodeValueCommand) location).getValue());
 
 					// TODO: we could allow move forward only if the label had 1 goto
 
@@ -341,8 +323,7 @@ public final class CSimplify {
 				final AbstractCommand location = ((GotoCommand) nextCommand).getLocation();
 
 				if (location instanceof HardcodeValueCommand) {
-					iterator.gotoPosition(
-							findLabelPosition(iterator.getList(), ((HardcodeValueCommand) location).getValue()));
+					iterator.gotoPosition(iterator.findLabelPosition(((HardcodeValueCommand) location).getValue()));
 					continue;
 				} else {
 					result = true;
@@ -376,8 +357,8 @@ public final class CSimplify {
 					final AbstractCommand location = ((GotoCommand) operation).getLocation();
 
 					if (location instanceof HardcodeValueCommand) {
-						final int gotoLocation = findLabelPosition(iterator.getList(),
-								((HardcodeValueCommand) location).getValue());
+						final int gotoLocation = iterator
+								.findLabelPosition(((HardcodeValueCommand) location).getValue());
 
 						if (isUsedAgainBeforeAssignment(iterator.clone(gotoLocation + 1), commandCheck, false)
 								|| isUsedAgainBeforeAssignment(iterator.clone(), commandCheck, false)) {
@@ -401,45 +382,10 @@ public final class CSimplify {
 		return result;
 	}
 
-	private static boolean isLabelUsed(List<AssemblyRepresentation> representations, int location) {
-		final List<Integer> calls = findBranchesTo(representations, location);
+	private static boolean isLabelUsed(AssemblyIterator iterator, int location) {
+		final List<Integer> calls = iterator.findBranchesTo(location);
 
 		return !calls.isEmpty();
-	}
-
-	private static int findLabelPosition(List<AssemblyRepresentation> representations, int location) {
-		for (int i = 0; i < representations.size(); i++) {
-			final AssemblyRepresentation representation = representations.get(i);
-			final AbstractCommand command = representation.getRepresentation();
-
-			if ((command instanceof LabelCommand) && (((LabelCommand) command).getLocation() == location)) {
-				return i;
-			}
-		}
-
-		throw new IllegalArgumentException("Could not find label: " + location);
-	}
-
-	private static List<Integer> findBranchesTo(List<AssemblyRepresentation> representations, int location) {
-		final List<Integer> results = new ArrayList<>();
-
-		for (int i = 0; i < representations.size(); i++) {
-			final AssemblyRepresentation representation = representations.get(i);
-			final AbstractCommand command = representation.getRepresentation();
-
-			if ((command instanceof GotoCommand) || (command instanceof IfCommand)) {
-				for (final Integer label : command.getHardcodedLabels()) {
-					if (location == label) {
-						results.add(i);
-
-						break;
-					}
-				}
-			}
-
-		}
-
-		return results;
 	}
 
 	// TODO: limiting register reduces some simplifications
@@ -448,13 +394,12 @@ public final class CSimplify {
 			final OperationCommand operation = ((OperationCommand) command);
 
 			if ((operation.getOperation() == Operation.ASSIGNMENT)
-					&& ((operation.getLeftCommand() instanceof RegisterCommand)
-							|| (operation.getLeftCommand() instanceof MultiRegisterCommand))) {
+					&& ((operation.getLeftOperand() instanceof RegisterCommand)
+							|| (operation.getLeftOperand() instanceof MultiRegisterCommand))) {
 				return true;
 			}
 		}
 
 		return false;
 	}
-
 }

@@ -1,8 +1,13 @@
 package com.github.rveach.disassembly;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import com.github.rveach.disassembly.operations.AbstractCommand;
+import com.github.rveach.disassembly.operations.GotoCommand;
+import com.github.rveach.disassembly.operations.IfCommand;
+import com.github.rveach.disassembly.operations.LabelCommand;
 import com.github.rveach.disassembly.operations.NopCommand;
 
 public class AssemblyIterator implements Iterator<AssemblyRepresentation> {
@@ -89,6 +94,10 @@ public class AssemblyIterator implements Iterator<AssemblyRepresentation> {
 		return this.list.get((this.position + addition) - 1);
 	}
 
+	public AssemblyRepresentation getAt(int position) {
+		return this.list.get(position);
+	}
+
 	public AssemblyRepresentation nextRepresentation() {
 		while (true) {
 			final AssemblyRepresentation item = next();
@@ -97,6 +106,41 @@ public class AssemblyIterator implements Iterator<AssemblyRepresentation> {
 				return item;
 			}
 		}
+	}
+
+	public int findLabelPosition(int location) {
+		for (int i = 0; i < this.list.size(); i++) {
+			final AssemblyRepresentation representation = this.list.get(i);
+			final AbstractCommand command = representation.getRepresentation();
+
+			if ((command instanceof LabelCommand) && (((LabelCommand) command).getLocation() == location)) {
+				return i;
+			}
+		}
+
+		throw new IllegalArgumentException("Could not find label: " + location);
+	}
+
+	public List<Integer> findBranchesTo(int location) {
+		final List<Integer> results = new ArrayList<>();
+
+		for (int i = 0; i < this.list.size(); i++) {
+			final AssemblyRepresentation representation = this.list.get(i);
+			final AbstractCommand command = representation.getRepresentation();
+
+			if ((command instanceof GotoCommand) || (command instanceof IfCommand)) {
+				for (final Integer label : command.getHardcodedLabels()) {
+					if (location == label) {
+						results.add(i);
+
+						break;
+					}
+				}
+			}
+
+		}
+
+		return results;
 	}
 
 	public void clear() {

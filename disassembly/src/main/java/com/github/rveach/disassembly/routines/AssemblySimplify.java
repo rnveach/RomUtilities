@@ -12,6 +12,24 @@ import com.github.rveach.disassembly.utils.UniqueSortedList;
 
 public final class AssemblySimplify {
 
+	/**
+	 * This class is all about simplifying very general assembly display.
+	 *
+	 * Different ways to simplify:
+	 *
+	 * 1)
+	 *
+	 * Single instances of {@link MultipleCommands} are split out into multiple,
+	 * single commands.
+	 *
+	 * 2)
+	 *
+	 * Labels are added for all hardcoded goto locations.
+	 */
+
+	// TODO: remove all hardcoded variables and replace uses of the variables where
+	// possible
+
 	private AssemblySimplify() {
 	}
 
