@@ -90,6 +90,14 @@ public class AssemblyIterator implements Iterator<AssemblyRepresentation> {
 		}
 	}
 
+	public void addAt(int position, AssemblyRepresentation item) {
+		this.list.add(position, item);
+
+		if (position <= this.position) {
+			this.position++;
+		}
+	}
+
 	public AssemblyRepresentation get(int addition) {
 		return this.list.get((this.position + addition) - 1);
 	}

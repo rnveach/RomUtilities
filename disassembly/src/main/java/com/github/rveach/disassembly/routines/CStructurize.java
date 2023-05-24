@@ -24,7 +24,7 @@ import com.github.rveach.disassembly.operations.LabelCommand;
  * ...<br />
  * goto C<br />
  * ...<br />
- * B:
+ * C:
  *
  * ...turns into...
  *
@@ -32,11 +32,11 @@ import com.github.rveach.disassembly.operations.LabelCommand;
  * goto C<br />
  * ...<br />
  * goto D<br />
- * B:<br />
+ * C:<br />
  * ...
  *
  * Note: It may not be clear, but the commands between {@code goto B} and
- * {@code goto C} were moved to after the B label.
+ * {@code goto C} were moved to after the C label.
  *
  * 2)
  *
@@ -45,20 +45,20 @@ import com.github.rveach.disassembly.operations.LabelCommand;
  * goto D<br />
  * ...<br />
  * C...<br />
- * B:
+ * D:
  *
  * ...turns into...
  *
  * if (A) goto B<br />
  * goto C<br />
  * ...<br />
+ * D:<br />
  * C...<br />
- * B:<br />
  * ...
  *
  * Note: It may not be clear, but the commands between {@code goto B} and
- * {@code goto C} were removed as they were duplicates of what was before B's
- * label.
+ * {@code goto D} were removed as they were duplicates of what was before D's
+ * label and D's label was moved back.
  */
 public final class CStructurize {
 
@@ -138,6 +138,26 @@ public final class CStructurize {
 				iterator.next();
 				iterator.clear();
 			}
+
+			// update remaining goto to the new location and add the new label if it doesn't
+			// exist
+
+			final GotoCommand gotoCommand = (GotoCommand) iterator.next().getRepresentation();
+			final int newLabelPosition = iterator
+					.findLabelPosition(((HardcodeValueCommand) gotoCommand.getLocation()).getValue()) - count;
+			final AssemblyRepresentation newLabelRepresentation = iterator.getAt(newLabelPosition);
+
+			if (newLabelRepresentation.getAssemblySize() == 0) {
+				throw new IllegalStateException("Can't add a label to a ficticious location");
+			}
+
+			final int address = newLabelRepresentation.getAddress();
+
+			if (!(iterator.getAt(newLabelPosition - 1).getRepresentation() instanceof LabelCommand)) {
+				iterator.addAt(newLabelPosition, new AssemblyRepresentation(0, 0, 0, "", new LabelCommand(address)));
+			}
+
+			gotoCommand.setLocation(new HardcodeValueCommand(address));
 
 			return true;
 		}
