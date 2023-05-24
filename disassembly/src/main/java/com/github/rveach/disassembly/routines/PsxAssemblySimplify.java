@@ -87,7 +87,7 @@ public final class PsxAssemblySimplify {
 
 		// assignment to same variable
 		if (assignment1.getLeftOperand().equals(assignment2.getLeftOperand())) {
-			final OperationCommand operand2 = (OperationCommand) assignment2.getLeftOperand();
+			final OperationCommand operand2 = (OperationCommand) assignment2.getRightOperand();
 
 			if (assignment1.getLeftOperand().equals(operand2.getLeftOperand())) {
 				final HardcodeValueCommand hardcoded1 = (HardcodeValueCommand) assignment1.getRightOperand();
