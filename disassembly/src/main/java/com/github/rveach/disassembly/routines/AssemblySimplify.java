@@ -28,7 +28,7 @@ public final class AssemblySimplify {
 	 */
 
 	// TODO: remove all hardcoded variables and replace uses of the variables where
-	// possible
+	// possible; this conflicts with `PsxAssemblySimplify` - lui/addiu/ori
 
 	private AssemblySimplify() {
 	}

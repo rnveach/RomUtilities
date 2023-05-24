@@ -11,6 +11,8 @@ import com.github.rveach.disassembly.operations.GotoCommand;
 import com.github.rveach.disassembly.operations.HardcodeValueCommand;
 import com.github.rveach.disassembly.operations.IfCommand;
 import com.github.rveach.disassembly.operations.LabelCommand;
+import com.github.rveach.disassembly.operations.Operation;
+import com.github.rveach.disassembly.operations.OperationCommand;
 
 /**
  * This class is all about making the flow of the code follow normal
@@ -59,6 +61,15 @@ import com.github.rveach.disassembly.operations.LabelCommand;
  * Note: It may not be clear, but the commands between {@code goto B} and
  * {@code goto D} were removed as they were duplicates of what was before D's
  * label and D's label was moved back.
+ *
+ * 3)
+ *
+ * if (A) goto B<br />
+ * if (C) goto B
+ *
+ * ...turns into...
+ *
+ * if ((A) || (C)) goto B
  */
 public final class CStructurize {
 
@@ -86,6 +97,13 @@ public final class CStructurize {
 				}
 
 				if (simplifyIfGotoCommandsGotoSingleLabelDuplicateCommandPattern(iterator.clone())) {
+					iterator.previous();
+
+					result = true;
+					continue;
+				}
+
+				if (simplifyIfGotoIfGotoPattern((IfCommand) command, iterator.clone())) {
 					iterator.previous();
 
 					result = true;
@@ -163,6 +181,33 @@ public final class CStructurize {
 		}
 
 		return false;
+	}
+
+	private static boolean simplifyIfGotoIfGotoPattern(IfCommand if1, AssemblyIterator iterator) {
+		final AssemblyRepresentation next = iterator.nextRepresentation();
+		final AbstractCommand nextCommand = next.getRepresentation();
+
+		if (!(nextCommand instanceof IfCommand)) {
+			return false;
+		}
+
+		final IfCommand if2 = (IfCommand) nextCommand;
+		final AbstractCommand op1 = if1.getOperation();
+		final AbstractCommand op2 = if2.getOperation();
+
+		if (!op1.equals(op2)) {
+			return false;
+		}
+
+		final AbstractCommand condition1 = if1.getCondition();
+		final AbstractCommand condition2 = if2.getCondition();
+
+		// merge the 2 conditions together as an OR
+		if1.setCondition(new OperationCommand(condition1, Operation.LOGICAL_OR, condition2));
+		// wipe the second command
+		iterator.clear();
+
+		return true;
 	}
 
 	private static int countIfGotoCommandsGotoSingleLabelPattern(AssemblyIterator iterator) {

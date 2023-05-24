@@ -130,6 +130,8 @@ public class SimplifyDoubleEqualityVisitor extends AbstractParentVisitor<Simplif
 						case LESS_THAN_OR_EQUAL_UNSIGNED:
 						case LESS_THAN_SIGNED:
 						case LESS_THAN_UNSIGNED:
+						case LOGICAL_AND:
+						case LOGICAL_OR:
 						case ADD_SIGNED:
 						case ADD_UNSIGNED:
 						case AND:

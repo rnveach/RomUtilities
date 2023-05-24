@@ -94,14 +94,26 @@ public final class SimplifyNotVisitor extends AbstractParentVisitor<SimplifyNotV
 		if (target instanceof NotCommand) {
 			// remove not of not
 
-			((IfCommand) parent).setCondition(((NotCommand) target).getTarget());
+			final AbstractCommand newTarget = ((NotCommand) target).getTarget();
+
+			if (parent instanceof OperationCommand) {
+				final OperationCommand operationCommand = (OperationCommand) parent;
+
+				if (operationCommand.getLeftOperand() == notCommand) {
+					operationCommand.setLeftOperand(newTarget);
+				} else {
+					operationCommand.setRightOperand(newTarget);
+				}
+			} else {
+				((IfCommand) parent).setCondition(newTarget);
+			}
 
 			changed = true;
 		} else if (target instanceof OperationCommand) {
 			final OperationCommand operationCommand = (OperationCommand) target;
 			final Operation operation = operationCommand.getOperation();
 
-			// TODO: conditional operator
+			// TODO: logical operators
 			if (operation.isEqualityOperation()) {
 				// move not command and apply to the equality
 

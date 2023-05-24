@@ -6,6 +6,7 @@ public enum Operation {
 	DIVIDE_UNSIGNED, MOD, SHIFT_LEFT, SHIFT_RIGHT_ARITHMETIC /* >> */, SHIFT_RIGHT_LOGICAL /* >>> */, //
 	AND, OR, XOR, //
 	EQUAL, NOT_EQUAL, LESS_THAN_SIGNED, LESS_THAN_UNSIGNED, LESS_THAN_OR_EQUAL_SIGNED, LESS_THAN_OR_EQUAL_UNSIGNED,
+	LOGICAL_AND, LOGICAL_OR, //
 	GREATER_THAN_SIGNED, GREATER_THAN_UNSIGNED, GREATER_THAN_OR_EQUAL_SIGNED, GREATER_THAN_OR_EQUAL_UNSIGNED, //
 	INDEX;
 
@@ -35,6 +36,10 @@ public enum Operation {
 		case LESS_THAN_SIGNED:
 		case LESS_THAN_UNSIGNED:
 			return " < ";
+		case LOGICAL_AND:
+			return " && ";
+		case LOGICAL_OR:
+			return " || ";
 		case MOD:
 			return " % ";
 		case MULTIPLY_SIGNED:
@@ -81,6 +86,8 @@ public enum Operation {
 		case LESS_THAN_OR_EQUAL_UNSIGNED:
 		case LESS_THAN_SIGNED:
 		case LESS_THAN_UNSIGNED:
+		case LOGICAL_AND:
+		case LOGICAL_OR:
 		case MOD:
 		case MULTIPLY_SIGNED:
 		case MULTIPLY_UNSIGNED:
@@ -127,6 +134,8 @@ public enum Operation {
 		case LESS_THAN_OR_EQUAL_UNSIGNED:
 		case LESS_THAN_SIGNED:
 		case LESS_THAN_UNSIGNED:
+		case LOGICAL_AND:
+		case LOGICAL_OR:
 		case NOT_EQUAL:
 			return false;
 		}
@@ -154,6 +163,8 @@ public enum Operation {
 		case DIVIDE_SIGNED:
 		case DIVIDE_UNSIGNED:
 		case INDEX:
+		case LOGICAL_AND:
+		case LOGICAL_OR:
 		case MOD:
 		case MULTIPLY_SIGNED:
 		case MULTIPLY_UNSIGNED:
@@ -190,6 +201,10 @@ public enum Operation {
 			return GREATER_THAN_OR_EQUAL_SIGNED;
 		case LESS_THAN_UNSIGNED:
 			return GREATER_THAN_OR_EQUAL_UNSIGNED;
+		case LOGICAL_AND:
+			return LOGICAL_OR;
+		case LOGICAL_OR:
+			return LOGICAL_AND;
 		case NOT_EQUAL:
 			return EQUAL;
 		case ADD_SIGNED:
@@ -241,6 +256,8 @@ public enum Operation {
 		case LESS_THAN_OR_EQUAL_UNSIGNED:
 		case LESS_THAN_SIGNED:
 		case LESS_THAN_UNSIGNED:
+		case LOGICAL_AND:
+		case LOGICAL_OR:
 		case MOD:
 		case SHIFT_LEFT:
 		case SHIFT_RIGHT_ARITHMETIC:
