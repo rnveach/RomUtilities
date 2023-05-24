@@ -343,29 +343,29 @@ public final class PsxAssembly {
 			}
 			break;
 		case 32: // LB
-			return getRtImmRs(address, assembly, "lb    ", Operation.INDEX_SIGNED, 1);
+			return getRtImmRs(address, assembly, "lb    ", Operation.INDEX, true, 1);
 		case 33: // LH
-			return getRtImmRs(address, assembly, "lh    ", Operation.INDEX_SIGNED, 2);
+			return getRtImmRs(address, assembly, "lh    ", Operation.INDEX, true, 2);
 		case 34: // LWL
 			// TODO: (Memory & 0xFFFF0000) | (Register & 0x0000FFFF)
 			break;
 		case 35: // LW
-			return getRtImmRs(address, assembly, "lw    ", Operation.INDEX_SIGNED, 4);
+			return getRtImmRs(address, assembly, "lw    ", Operation.INDEX, true, 4);
 		case 36: // LBU
-			return getRtImmRs(address, assembly, "lbu   ", Operation.INDEX_UNSIGNED, 1);
+			return getRtImmRs(address, assembly, "lbu   ", Operation.INDEX, false, 1);
 		case 37: // LHU
-			return getRtImmRs(address, assembly, "lhu   ", Operation.INDEX_UNSIGNED, 2);
+			return getRtImmRs(address, assembly, "lhu   ", Operation.INDEX, false, 2);
 		case 38: // LWR
 			// TODO: (Memory & 0x0000FFFF) | (Register & 0xFFFF0000)
 		case 40: // SB
-			return getRtImmRsReverse(address, assembly, "sb    ", Operation.INDEX_SIGNED, 1);
+			return getRtImmRsReverse(address, assembly, "sb    ", Operation.INDEX, 1);
 		case 41: // SH
-			return getRtImmRsReverse(address, assembly, "sh    ", Operation.INDEX_SIGNED, 2);
+			return getRtImmRsReverse(address, assembly, "sh    ", Operation.INDEX, 2);
 		case 42: // SWL
 			// TODO
 			break;
 		case 43: // SW
-			return getRtImmRsReverse(address, assembly, "sw    ", Operation.INDEX_SIGNED, 4);
+			return getRtImmRsReverse(address, assembly, "sw    ", Operation.INDEX, 4);
 		case 46: // SWR
 			// TODO
 			break;
@@ -431,13 +431,13 @@ public final class PsxAssembly {
 	}
 
 	private static AssemblyRepresentation getRtImmRs(int address, int assembly, String command, Operation operation,
-			int byteSize) {
+			boolean signed, int byteSize) {
 		final String rt = REGISTERS[rt(assembly)];
 		final String rs = REGISTERS[rs(assembly)];
 		final int imm = imm(assembly);
 
 		return getCommand(address, assembly, concat(command, rt, imm, rs),
-				getAssignment(rt, getByteTruncation(byteSize, getOperation(rs, operation, imm))));
+				getAssignment(rt, getByteTruncation(signed, byteSize, getOperation(rs, operation, imm))));
 	}
 
 	private static AssemblyRepresentation getRtImmRsReverse(int address, int assembly, String command,
@@ -447,7 +447,7 @@ public final class PsxAssembly {
 		final int imm = imm(assembly);
 
 		return getCommand(address, assembly, concat(command, rt, imm, rs),
-				getAssignment(getByteTruncation(byteSize, getOperation(rs, operation, imm)), getRegister(rt)));
+				getAssignment(getByteTruncation(true, byteSize, getOperation(rs, operation, imm)), getRegister(rt)));
 	}
 
 	private static AssemblyRepresentation getRtRs(int address, int assembly, String command) {
@@ -554,8 +554,8 @@ public final class PsxAssembly {
 		return new GotoCommand(getHardcoded(address));
 	}
 
-	private static AbstractCommand getByteTruncation(int byteSize, AbstractCommand command) {
-		return new ByteTruncationCommand(byteSize, command);
+	private static AbstractCommand getByteTruncation(boolean signed, int byteSize, AbstractCommand command) {
+		return new ByteTruncationCommand(signed, byteSize, command);
 	}
 
 	private static int rs(int assembly) {

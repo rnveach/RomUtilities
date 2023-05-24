@@ -136,8 +136,7 @@ public class SimplifyDoubleEqualityVisitor extends AbstractParentVisitor<Simplif
 						case ASSIGNMENT:
 						case DIVIDE_SIGNED:
 						case DIVIDE_UNSIGNED:
-						case INDEX_SIGNED:
-						case INDEX_UNSIGNED:
+						case INDEX:
 						case MOD:
 						case MULTIPLY_SIGNED:
 						case MULTIPLY_UNSIGNED:

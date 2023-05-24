@@ -4,24 +4,26 @@ import java.util.List;
 
 public final class ByteTruncationCommand extends AbstractCommand {
 
+	private final boolean signed;
 	private int byteSize;
 	private AbstractCommand command;
 
-	public ByteTruncationCommand(int byteSize, AbstractCommand command) {
+	public ByteTruncationCommand(boolean signed, int byteSize, AbstractCommand command) {
+		this.signed = signed;
 		this.byteSize = byteSize;
 		this.command = command;
 	}
 
 	@Override
 	public AbstractCommand deepClone() {
-		return new ByteTruncationCommand(this.byteSize, this.command.deepClone());
+		return new ByteTruncationCommand(this.signed, this.byteSize, this.command.deepClone());
 	}
 
 	@Override
 	protected boolean equalsSpecific(AbstractCommand other) {
 		final ByteTruncationCommand o = (ByteTruncationCommand) other;
 
-		return (this.byteSize == o.byteSize) && (this.command.equals(o.command));
+		return (this.signed == o.signed) && (this.byteSize == o.byteSize) && (this.command.equals(o.command));
 	}
 
 	@Override
@@ -60,23 +62,27 @@ public final class ByteTruncationCommand extends AbstractCommand {
 
 	@Override
 	public String getDisplay() {
-		final String sizeDisplay;
+		String sizeDisplay;
 
 		switch (this.byteSize) {
 		case 1:
-			sizeDisplay = "(byte) ";
+			sizeDisplay = "byte";
 			break;
 		case 2:
-			sizeDisplay = "(short) ";
+			sizeDisplay = "short";
 			break;
 		case 4:
-			sizeDisplay = "(long) ";
+			sizeDisplay = "long";
 			break;
 		default:
 			throw new IllegalStateException("Not Implemented Byte Size");
 		}
 
-		return "(" + sizeDisplay + this.command.getDisplay() + ")";
+		if (!this.signed) {
+			sizeDisplay = "unsigned " + sizeDisplay;
+		}
+
+		return "((" + sizeDisplay + ") " + this.command.getDisplay() + ")";
 	}
 
 	public int getByteSize() {

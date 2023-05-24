@@ -7,7 +7,7 @@ public enum Operation {
 	AND, OR, XOR, //
 	EQUAL, NOT_EQUAL, LESS_THAN_SIGNED, LESS_THAN_UNSIGNED, LESS_THAN_OR_EQUAL_SIGNED, LESS_THAN_OR_EQUAL_UNSIGNED,
 	GREATER_THAN_SIGNED, GREATER_THAN_UNSIGNED, GREATER_THAN_OR_EQUAL_SIGNED, GREATER_THAN_OR_EQUAL_UNSIGNED, //
-	INDEX_SIGNED, INDEX_UNSIGNED;
+	INDEX;
 
 	String getDisplay() {
 		switch (this) {
@@ -55,8 +55,7 @@ public enum Operation {
 			return " - ";
 		case XOR:
 			return " ^ ";
-		case INDEX_SIGNED:
-		case INDEX_UNSIGNED:
+		case INDEX:
 			return null;
 		}
 
@@ -65,8 +64,7 @@ public enum Operation {
 
 	public boolean isIndex() {
 		switch (this) {
-		case INDEX_SIGNED:
-		case INDEX_UNSIGNED:
+		case INDEX:
 			return true;
 		case ADD_SIGNED:
 		case ADD_UNSIGNED:
@@ -119,8 +117,7 @@ public enum Operation {
 		case XOR:
 			return true;
 		case ASSIGNMENT:
-		case INDEX_SIGNED:
-		case INDEX_UNSIGNED:
+		case INDEX:
 		case EQUAL:
 		case GREATER_THAN_OR_EQUAL_SIGNED:
 		case GREATER_THAN_OR_EQUAL_UNSIGNED:
@@ -156,8 +153,7 @@ public enum Operation {
 		case ASSIGNMENT:
 		case DIVIDE_SIGNED:
 		case DIVIDE_UNSIGNED:
-		case INDEX_SIGNED:
-		case INDEX_UNSIGNED:
+		case INDEX:
 		case MOD:
 		case MULTIPLY_SIGNED:
 		case MULTIPLY_UNSIGNED:
@@ -202,8 +198,7 @@ public enum Operation {
 		case ASSIGNMENT:
 		case DIVIDE_SIGNED:
 		case DIVIDE_UNSIGNED:
-		case INDEX_SIGNED:
-		case INDEX_UNSIGNED:
+		case INDEX:
 		case MOD:
 		case MULTIPLY_SIGNED:
 		case MULTIPLY_UNSIGNED:
@@ -241,8 +236,7 @@ public enum Operation {
 		case GREATER_THAN_OR_EQUAL_UNSIGNED:
 		case GREATER_THAN_SIGNED:
 		case GREATER_THAN_UNSIGNED:
-		case INDEX_SIGNED:
-		case INDEX_UNSIGNED:
+		case INDEX:
 		case LESS_THAN_OR_EQUAL_SIGNED:
 		case LESS_THAN_OR_EQUAL_UNSIGNED:
 		case LESS_THAN_SIGNED:
