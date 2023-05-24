@@ -246,31 +246,31 @@ public final class PsxAssembly {
 		case 7: // BGTZ
 			return getRsBranch(address, assembly, "bgtz  ", Operation.GREATER_THAN_SIGNED);
 		case 8: // ADDI
-			return getRtRsImm(address, assembly, "addi  ", Operation.ADD_SIGNED);
+			return getRtRsImm(address, assembly, "addi  ", Operation.ADD_SIGNED, true);
 		case 9: // ADDIU
 			if (rs(assembly) == 0) {
-				return getRtImm(address, assembly, "li    ", false);
-			} else if (imm(assembly) == 0) {
+				return getRtImm(address, assembly, "li    ", true, false);
+			} else if (imm(assembly, false) == 0) {
 				return getRtRs(address, assembly, "move  ");
 			}
 
-			return getRtRsImm(address, assembly, "addiu ", Operation.ADD_UNSIGNED);
+			return getRtRsImm(address, assembly, "addiu ", Operation.ADD_UNSIGNED, true);
 		case 10: // SLTI
-			return getRtRsImm(address, assembly, "slti  ", Operation.LESS_THAN_SIGNED);
+			return getRtRsImm(address, assembly, "slti  ", Operation.LESS_THAN_SIGNED, true);
 		case 11: // SLTIU
-			return getRtRsImm(address, assembly, "sltiu ", Operation.LESS_THAN_UNSIGNED);
+			return getRtRsImm(address, assembly, "sltiu ", Operation.LESS_THAN_UNSIGNED, false);
 		case 12: // ANDI
-			return getRtRsImm(address, assembly, "andi  ", Operation.AND);
+			return getRtRsImm(address, assembly, "andi  ", Operation.AND, false);
 		case 13: // ORI
 			if (rs(assembly) == 0) {
-				return getRtImm(address, assembly, "li    ", false);
+				return getRtImm(address, assembly, "li    ", false, false);
 			}
 
-			return getRtRsImm(address, assembly, "ori   ", Operation.OR);
+			return getRtRsImm(address, assembly, "ori   ", Operation.OR, false);
 		case 14: // XORI
-			return getRtRsImm(address, assembly, "xori  ", Operation.OR);
+			return getRtRsImm(address, assembly, "xori  ", Operation.OR, false);
 		case 15: // LUI
-			return getRtImm(address, assembly, "lui   ", true);
+			return getRtImm(address, assembly, "lui   ", false, true);
 		case 16: // Cop0
 			switch (rs(assembly)) {
 			case 0: // MFC0
@@ -413,38 +413,40 @@ public final class PsxAssembly {
 				getAssignment(rd, getOperation(rs, operation, rt)));
 	}
 
-	private static AssemblyRepresentation getRtRsImm(int address, int assembly, String command, Operation operation) {
+	private static AssemblyRepresentation getRtRsImm(int address, int assembly, String command, Operation operation,
+			boolean immSigned) {
 		final String rt = REGISTERS[rt(assembly)];
 		final String rs = REGISTERS[rs(assembly)];
-		final int imm = imm(assembly);
+		final int imm = imm(assembly, immSigned);
 
 		return getCommand(address, assembly, concat(command, rt, rs, imm),
 				getAssignment(rt, getOperation(rs, operation, imm)));
 	}
 
-	private static AssemblyRepresentation getRtImm(int address, int assembly, String command, boolean upper) {
+	private static AssemblyRepresentation getRtImm(int address, int assembly, String command, boolean immSigned,
+			boolean upper) {
 		final String rt = REGISTERS[rt(assembly)];
-		final int imm = imm(assembly);
+		final int imm = imm(assembly, immSigned);
 
 		return getCommand(address, assembly, concat(command, rt, imm),
 				getAssignment(rt, getHardcoded(imm << (upper ? 16 : 0))));
 	}
 
 	private static AssemblyRepresentation getRtImmRs(int address, int assembly, String command, Operation operation,
-			boolean signed, int byteSize) {
+			boolean assignmentSigned, int byteSize) {
 		final String rt = REGISTERS[rt(assembly)];
 		final String rs = REGISTERS[rs(assembly)];
-		final int imm = imm(assembly);
+		final int imm = imm(assembly, true);
 
 		return getCommand(address, assembly, concat(command, rt, imm, rs),
-				getAssignment(rt, getByteTruncation(signed, byteSize, getOperation(rs, operation, imm))));
+				getAssignment(rt, getByteTruncation(assignmentSigned, byteSize, getOperation(rs, operation, imm))));
 	}
 
 	private static AssemblyRepresentation getRtImmRsReverse(int address, int assembly, String command,
 			Operation operation, int byteSize) {
 		final String rt = REGISTERS[rt(assembly)];
 		final String rs = REGISTERS[rs(assembly)];
-		final int imm = imm(assembly);
+		final int imm = imm(assembly, true);
 
 		return getCommand(address, assembly, concat(command, rt, imm, rs),
 				getAssignment(getByteTruncation(true, byteSize, getOperation(rs, operation, imm)), getRegister(rt)));
@@ -574,8 +576,12 @@ public final class PsxAssembly {
 		return ((assembly >> 6) & 0x1F);
 	}
 
-	private static short imm(int assembly) {
-		return (short) (assembly & 0xFFFF);
+	private static int imm(int assembly, boolean signed) {
+		if (signed) {
+			return (short) (assembly & 0xFFFF);
+		}
+
+		return assembly & 0xFFFF;
 	}
 
 	private static int target(int assembly) {
@@ -583,7 +589,7 @@ public final class PsxAssembly {
 	}
 
 	private static int branch(int assembly, int address) {
-		return (imm(assembly) * 4) + address + 4;
+		return (imm(assembly, true) * 4) + address + 4;
 	}
 
 }
