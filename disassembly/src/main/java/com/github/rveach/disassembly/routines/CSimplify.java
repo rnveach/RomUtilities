@@ -140,7 +140,7 @@ public final class CSimplify {
 						.begin(iterator.clone()).getResult()) {
 					iterator.previous();
 
-					result = true;
+					// result = true;
 					continue;
 				}
 			}

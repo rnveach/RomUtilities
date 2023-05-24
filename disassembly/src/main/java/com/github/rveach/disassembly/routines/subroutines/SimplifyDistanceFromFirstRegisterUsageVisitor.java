@@ -26,8 +26,8 @@ import com.github.rveach.disassembly.visitors.AbstractLineIteratorVisitor;
  *
  * I consider this a very questionable implementation as it could drastically
  * re-arrange code from it's original purpose making it harder to connect the C
- * with the original code. It may also be possible that this could get stuck in
- * a loop if 2 sets of instructions can be swapped indefinitely.
+ * with the original code. It is possible that this can get stuck in a loop if 2
+ * sets of instructions can be swapped indefinitely.
  *
  * This was created for code that couldn't be naturally merged, like:
  *
