@@ -77,7 +77,7 @@ public final class JumpSubroutineCommand extends AbstractCommand {
 
 	@Override
 	public String getDisplay() {
-		return this.returnLocation.getDisplay() + " <- " + this.target.getDisplay();
+		return this.returnLocation.getDisplay() + " <- " + this.target.getDisplay() + "()";
 	}
 
 	public AbstractCommand getTarget() {
