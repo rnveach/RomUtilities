@@ -96,11 +96,11 @@ public final class PsxAssembly {
 				return getCommand(address, assembly, concat("jalr  ", rs, rd),
 						new JumpSubroutineCommand(getRegister(rs), getRegister(rd)));
 			case 12: // SYSCALL
-				parameter = assembly & 0xFFFFF;
+				parameter = (assembly >> 6) & 0xFFFFF;
 
 				return getCustomCall(address, assembly, "syscall ", parameter, "syscall");
 			case 13: // BREAK
-				parameter = assembly & 0xFFFFF;
+				parameter = (assembly >> 6) & 0xFFFFF;
 
 				return getCustomCall(address, assembly, "break ", parameter, "break");
 			case 16: // MFHI
