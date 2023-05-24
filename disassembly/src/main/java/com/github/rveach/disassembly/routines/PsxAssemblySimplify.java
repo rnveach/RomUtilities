@@ -8,6 +8,7 @@ import com.github.rveach.disassembly.operations.HardcodeValueCommand;
 import com.github.rveach.disassembly.operations.NopCommand;
 import com.github.rveach.disassembly.operations.OperationCommand;
 import com.github.rveach.disassembly.operations.RegisterCommand;
+import com.github.rveach.disassembly.utils.AssemblyUtil;
 
 public final class PsxAssemblySimplify {
 
@@ -19,9 +20,17 @@ public final class PsxAssemblySimplify {
 	 *
 	 * 1)
 	 *
-	 * Any usage of $r0 is turned into 0x0.
+	 * $r0 = ...
+	 *
+	 * ..turns into...
+	 *
+	 * NOP
 	 *
 	 * 2)
+	 *
+	 * Any usage of $r0 is turned into 0x0.
+	 *
+	 * 3)
 	 *
 	 * lui and ori/addiu consecutive commands are turned into a single load.
 	 */
@@ -40,10 +49,17 @@ public final class PsxAssemblySimplify {
 			final AbstractCommand command = representation.getRepresentation();
 			final int assembly = representation.getAssembly();
 
+			// assignment to $r0 is considered a NOP
+			if (AssemblyUtil.isRegisterAssignment(command)) {
+				if (((OperationCommand) command).getLeftOperand().equals(r0SwapFrom)) {
+					representation.setRepresentation(NopCommand.get());
+
+					continue;
+				}
+			}
+
 			// swap register $r0 with hard coded 0x0
 			command.swap(r0SwapFrom, r0SwapTo);
-
-			// TODO: '0x0 = '
 
 			// combine lui and ori/addiu
 			combineLuiAddiuOri(iterator, command, assembly);
