@@ -111,6 +111,29 @@ public class SimplifyRegisterAssignmentVisitor extends AbstractLineIteratorVisit
 		return true;
 	}
 
+	private boolean visitAfter(IfCommand command, AssemblyIterator iterator) {
+		// follow gotos, as long as they are hardcoded values, otherwise we treat it as
+		// unknown
+
+		final GotoCommand gotoCommand = (GotoCommand) command.getOperation();
+		final AbstractCommand location = gotoCommand.getLocation();
+
+		if (location instanceof HardcodeValueCommand) {
+			final int gotoLocation = iterator.findLabelPosition(((HardcodeValueCommand) location).getValue());
+
+			// if command isn't used before assignment on the goto, assume it is safe to
+			// continue through the bottom
+
+			if (!isUsedAgainBeforeAssignment(iterator.clone(gotoLocation + 1), this.originalAssignment, false)) {
+				return true;
+			}
+		}
+
+		// otherwise, it is not safe to pass the if command
+
+		return false;
+	}
+
 	@Override
 	protected boolean visit(JumpSubroutineCommand jumpSubroutineCommand, AssemblyIterator iterator) {
 		// we can't go pass a call, unless we can examine it too, so we treat it as
@@ -218,8 +241,9 @@ public class SimplifyRegisterAssignmentVisitor extends AbstractLineIteratorVisit
 		}
 
 		if (command instanceof IfCommand) {
-			// TODO: implementation
-			return false;
+			if (!visitAfter((IfCommand) command, iterator)) {
+				return false;
+			}
 		}
 
 		return true;
