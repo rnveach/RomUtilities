@@ -1,5 +1,7 @@
 package com.github.rveach.disassembly.routines.subroutines;
 
+import java.util.Arrays;
+
 import com.github.rveach.disassembly.AssemblyIterator;
 import com.github.rveach.disassembly.operations.AbstractCommand;
 import com.github.rveach.disassembly.operations.ByteTruncationCommand;
@@ -15,44 +17,54 @@ import com.github.rveach.disassembly.operations.NopCommand;
 import com.github.rveach.disassembly.operations.NotCommand;
 import com.github.rveach.disassembly.operations.OperationCommand;
 import com.github.rveach.disassembly.operations.RegisterCommand;
+import com.github.rveach.disassembly.utils.AssemblyUtil;
 import com.github.rveach.disassembly.visitors.AbstractLineIteratorVisitor;
 
 /**
- * This identifies if a register is used before the next assignment it finds.
- * Result is {@code true} if the register is used.
+ * This merges an assignment that has a hardcoded value with all usages, if
+ * possible. Result is {@code true} if a change was made.
  */
-public final class IsRegisterUsedeBeforeAssignmentVisitor
-		extends AbstractLineIteratorVisitor<IsRegisterUsedeBeforeAssignmentVisitor> {
+public final class SimplifyHardcodedRegisterAssignmentVisitor
+		extends AbstractLineIteratorVisitor<SimplifyHardcodedRegisterAssignmentVisitor> {
 
 	private boolean[] tracker;
-	private boolean skipFirstCommand;
-	private AbstractCommand register;
+
+	private AbstractCommand originalAssignment;
+	private AbstractCommand originalAssignnee;
 
 	private boolean result;
 
-	private static final IsRegisterUsedeBeforeAssignmentVisitor INSTANCE = new IsRegisterUsedeBeforeAssignmentVisitor();
+	private static final SimplifyHardcodedRegisterAssignmentVisitor INSTANCE = new SimplifyHardcodedRegisterAssignmentVisitor();
 
-	private IsRegisterUsedeBeforeAssignmentVisitor() {
+	private SimplifyHardcodedRegisterAssignmentVisitor() {
 	}
 
-	private IsRegisterUsedeBeforeAssignmentVisitor(IsRegisterUsedeBeforeAssignmentVisitor o) {
+	private SimplifyHardcodedRegisterAssignmentVisitor(SimplifyHardcodedRegisterAssignmentVisitor o) {
 		this.tracker = o.tracker;
-		this.skipFirstCommand = o.skipFirstCommand;
-		this.register = o.register;
+		this.originalAssignment = o.originalAssignment;
+		this.originalAssignnee = o.originalAssignnee;
 	}
 
-	public static IsRegisterUsedeBeforeAssignmentVisitor get() {
+	public static SimplifyHardcodedRegisterAssignmentVisitor get() {
 		return INSTANCE;
 	}
 
 	@Override
-	public IsRegisterUsedeBeforeAssignmentVisitor clone() {
-		return new IsRegisterUsedeBeforeAssignmentVisitor(this);
+	public SimplifyHardcodedRegisterAssignmentVisitor clone() {
+		return new SimplifyHardcodedRegisterAssignmentVisitor(this);
 	}
 
 	@Override
 	protected void beginInit(AssemblyIterator iterator) {
 		this.result = false;
+
+		if (this.tracker == null) {
+			this.tracker = new boolean[iterator.getList().size()];
+		}
+
+		Arrays.fill(this.tracker, false);
+
+		this.tracker[iterator.getPosition()] = true;
 	}
 
 	@Override
@@ -67,22 +79,29 @@ public final class IsRegisterUsedeBeforeAssignmentVisitor
 
 	@Override
 	protected boolean visit(GotoCommand gotoCommand, AssemblyIterator iterator) {
-		// follow gotos, as long as they are hardcoded values, otherwise we treat it as
-		// unknown
+		// follow gotos, as long as they are hardcoded values and jump to a location
+		// which can't fall through from above
 
 		final AbstractCommand location = gotoCommand.getLocation();
 
 		if (location instanceof HardcodeValueCommand) {
-			this.skipFirstCommand = false;
+			final int gotoLocation = iterator.findLabelPosition(((HardcodeValueCommand) location).getValue());
+			int beforeLabelPosition = gotoLocation - 1;
 
-			iterator.gotoPosition(iterator.findLabelPosition(((HardcodeValueCommand) location).getValue()));
+			while (iterator.getAt(beforeLabelPosition).getRepresentation() instanceof NopCommand) {
+				beforeLabelPosition--;
+			}
 
-			return true;
-		} else {
-			this.result = true;
+			if (iterator.getAt(beforeLabelPosition).getRepresentation() instanceof GotoCommand) {
+				iterator.gotoPosition(gotoLocation + 1);
 
-			return false;
+				return true;
+			}
 		}
+
+		// otherwise, it is not safe to pass the goto
+
+		return false;
 	}
 
 	@Override
@@ -95,29 +114,15 @@ public final class IsRegisterUsedeBeforeAssignmentVisitor
 		return true;
 	}
 
-	private boolean visitAfter(IfCommand ifCommand, AssemblyIterator iterator) {
-		// after checking register usage, follow 2 paths on ifs (goto and command after
-		// if), and exit; if either path reports it is used, then report it back
+	private boolean visitAfter(IfCommand command, AssemblyIterator iterator) {
+		final GotoCommand gotoCommand = (GotoCommand) command.getOperation();
 
-		final AbstractCommand operation = ifCommand.getOperation();
+		// if the goto takes on the position to go to, then a new clone is used to
+		// continue on here
 
-		if (operation instanceof GotoCommand) {
-			final AbstractCommand location = ((GotoCommand) operation).getLocation();
-
-			if (location instanceof HardcodeValueCommand) {
-				final int gotoLocation = iterator.findLabelPosition(((HardcodeValueCommand) location).getValue());
-
-				if (clone().begin(iterator.clone(gotoLocation + 1)).getResult()) {
-					this.result = true;
-
-					return false;
-				}
-
-				// continue on following non-goto path
-			} else {
+		if (visit(gotoCommand, iterator)) {
+			if (clone().begin(iterator.clone()).getResult()) {
 				this.result = true;
-
-				return false;
 			}
 		}
 
@@ -128,15 +133,13 @@ public final class IsRegisterUsedeBeforeAssignmentVisitor
 	protected boolean visit(JumpSubroutineCommand jumpSubroutineCommand, AssemblyIterator iterator) {
 		// we can't go pass a call, unless we can examine it too, so we treat it as
 		// unknown
-
-		this.result = true;
-
 		return false;
 	}
 
 	@Override
 	protected boolean visit(LabelCommand labelCommand, AssemblyIterator iterator) {
-		return true;
+		// TODO: implementation
+		return false;
 	}
 
 	@Override
@@ -171,7 +174,7 @@ public final class IsRegisterUsedeBeforeAssignmentVisitor
 
 	@Override
 	protected boolean visitAllBefore(AbstractCommand command, AssemblyIterator iterator) {
-		if ((!this.skipFirstCommand) && (this.tracker[iterator.getPosition()])) {
+		if (this.tracker[iterator.getPosition()]) {
 			return false;
 		}
 
@@ -181,22 +184,17 @@ public final class IsRegisterUsedeBeforeAssignmentVisitor
 
 	@Override
 	protected boolean visitAllAfter(AbstractCommand command, AssemblyIterator iterator) {
-		if (this.skipFirstCommand) {
-			this.skipFirstCommand = false;
-		} else if (command.contains(this.register)) {
-			// we exit if the register is used in some way; however, we say it isn't used if
-			// it is only just re-assigned later and not read from
+		if (AssemblyUtil.isRegisterAssignment(command)) {
+			// check if next register assignment is same as original
 
-			this.result = true;
-
-			if (command.isAssignedTo(this.register)) {
-				if (!command.isReadFrom(this.register)) {
-					this.result = false;
-				}
+			if (command.isAssignedTo(this.originalAssignment)) {
+				// original is getting wiped by next command
+				return false;
 			}
-
-			return false;
 		}
+
+		// apply swap to all instances of the assignment
+		command.swap(this.originalAssignment, this.originalAssignnee);
 
 		if (command instanceof IfCommand) {
 			if (!visitAfter((IfCommand) command, iterator)) {
@@ -207,20 +205,9 @@ public final class IsRegisterUsedeBeforeAssignmentVisitor
 		return true;
 	}
 
-	public IsRegisterUsedeBeforeAssignmentVisitor setTracker(boolean[] tracker) {
-		this.tracker = tracker;
-
-		return this;
-	}
-
-	public IsRegisterUsedeBeforeAssignmentVisitor setSkipFirstCommand(boolean skipFirstCommand) {
-		this.skipFirstCommand = skipFirstCommand;
-
-		return this;
-	}
-
-	public IsRegisterUsedeBeforeAssignmentVisitor setRegister(AbstractCommand register) {
-		this.register = register;
+	public SimplifyHardcodedRegisterAssignmentVisitor setOriginalCommand(AbstractCommand originalCommand) {
+		this.originalAssignment = ((OperationCommand) originalCommand).getLeftOperand();
+		this.originalAssignnee = ((OperationCommand) originalCommand).getRightOperand();
 
 		return this;
 	}

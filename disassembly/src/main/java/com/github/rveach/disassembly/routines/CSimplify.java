@@ -12,7 +12,9 @@ import com.github.rveach.disassembly.operations.IfCommand;
 import com.github.rveach.disassembly.operations.LabelCommand;
 import com.github.rveach.disassembly.operations.NopCommand;
 import com.github.rveach.disassembly.operations.NotCommand;
+import com.github.rveach.disassembly.operations.OperationCommand;
 import com.github.rveach.disassembly.routines.subroutines.SimplifyDistanceFromFirstRegisterUsageVisitor;
+import com.github.rveach.disassembly.routines.subroutines.SimplifyHardcodedRegisterAssignmentVisitor;
 import com.github.rveach.disassembly.routines.subroutines.SimplifyRegisterAssignmentVisitor;
 import com.github.rveach.disassembly.utils.AssemblyUtil;
 
@@ -61,6 +63,16 @@ public final class CSimplify {
 	 *
 	 * 5)
 	 *
+	 * A = 1;<br />
+	 * if (A > 0) ...
+	 *
+	 * ...turns into...
+	 *
+	 * A = 1;<br />
+	 * if (1 > 0) ...
+	 *
+	 * 6)
+	 *
 	 * if (A) goto B;<br />
 	 * goto C;<br />
 	 * B:
@@ -70,7 +82,7 @@ public final class CSimplify {
 	 * if (!A) goto C;<br />
 	 * B:
 	 *
-	 * 6)
+	 * 7)
 	 *
 	 * A = B...<br />
 	 * B++<br />
@@ -136,11 +148,22 @@ public final class CSimplify {
 
 					result = true;
 					continue;
-				} else if (SimplifyDistanceFromFirstRegisterUsageVisitor.get().setOriginalCommand(command)
+				}
+
+				if (SimplifyDistanceFromFirstRegisterUsageVisitor.get().setOriginalCommand(command)
 						.begin(iterator.clone()).getResult()) {
 					iterator.previous();
 
 					// result = true;
+					continue;
+				}
+
+				if ((((OperationCommand) command).getRightOperand() instanceof HardcodeValueCommand)
+						&& (SimplifyHardcodedRegisterAssignmentVisitor.get().setOriginalCommand(command)
+								.begin(iterator.clone()).getResult())) {
+					iterator.previous();
+
+					result = true;
 					continue;
 				}
 			}

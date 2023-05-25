@@ -26,7 +26,8 @@ import com.github.rveach.disassembly.visitors.AbstractLineIteratorVisitor;
  * This merges an assignment with it's first usage, if possible. Result is
  * {@code true} if a change was made.
  */
-public class SimplifyRegisterAssignmentVisitor extends AbstractLineIteratorVisitor<SimplifyRegisterAssignmentVisitor> {
+public final class SimplifyRegisterAssignmentVisitor
+		extends AbstractLineIteratorVisitor<SimplifyRegisterAssignmentVisitor> {
 
 	private boolean[] tracker;
 
@@ -40,6 +41,9 @@ public class SimplifyRegisterAssignmentVisitor extends AbstractLineIteratorVisit
 	private boolean result;
 
 	private static final SimplifyRegisterAssignmentVisitor INSTANCE = new SimplifyRegisterAssignmentVisitor();
+
+	private SimplifyRegisterAssignmentVisitor() {
+	}
 
 	public static SimplifyRegisterAssignmentVisitor get() {
 		return INSTANCE;

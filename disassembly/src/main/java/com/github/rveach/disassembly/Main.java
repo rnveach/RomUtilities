@@ -163,11 +163,11 @@ public final class Main {
 						while (CStructurize.execute(holder)) {
 							changed = true;
 						}
-					} while (changed);
 
-					while (CSimplifyMore.execute(holder)) {
-						// nothing to do
-					}
+						while (CSimplifyMore.execute(holder)) {
+							// nothing to do
+						}
+					} while (changed);
 
 					holder.output(writer, this.assemblyType);
 				}

@@ -11,6 +11,7 @@ import com.github.rveach.disassembly.operations.GotoCommand;
 import com.github.rveach.disassembly.operations.HardcodeValueCommand;
 import com.github.rveach.disassembly.operations.IfCommand;
 import com.github.rveach.disassembly.operations.LabelCommand;
+import com.github.rveach.disassembly.operations.NopCommand;
 import com.github.rveach.disassembly.operations.Operation;
 import com.github.rveach.disassembly.operations.OperationCommand;
 
@@ -240,7 +241,11 @@ public final class CStructurize {
 					return -1;
 				}
 
-				final int beforeLabelPosition = iterator.findLabelPosition(locationValue) - 1;
+				int beforeLabelPosition = iterator.findLabelPosition(locationValue) - 1;
+
+				while (iterator.getAt(beforeLabelPosition).getRepresentation() instanceof NopCommand) {
+					beforeLabelPosition--;
+				}
 
 				if (iterator.getAt(beforeLabelPosition).getRepresentation() instanceof GotoCommand) {
 					break;
