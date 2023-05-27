@@ -4,11 +4,10 @@
 	<groupId>com.github.rveach</groupId>
 	<artifactId>assembly</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>Assembly</name>
+	<name>disassembly</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
 
 		<java.version>11</java.version>
 
