@@ -15,64 +15,81 @@ import com.github.rveach.disassembly.operations.NopCommand;
 import com.github.rveach.disassembly.operations.Operation;
 import com.github.rveach.disassembly.operations.OperationCommand;
 
-/**
- * This class is all about making the flow of the code follow normal
- * if/else/while/do conventions.
- *
- * Different ways to do this:
- *
- * 1)
- *
- * if (A) goto B<br />
- * ...<br />
- * goto C<br />
- * ...<br />
- * C:
- *
- * ...turns into...
- *
- * if (A) goto B<br />
- * goto C<br />
- * ...<br />
- * goto D<br />
- * C:<br />
- * ...
- *
- * Note: It may not be clear, but the commands between {@code goto B} and
- * {@code goto C} were moved to after the C label.
- *
- * 2)
- *
- * if (A) goto B<br />
- * C...<br />
- * goto D<br />
- * ...<br />
- * C...<br />
- * D:
- *
- * ...turns into...
- *
- * if (A) goto B<br />
- * goto C<br />
- * ...<br />
- * D:<br />
- * C...<br />
- * ...
- *
- * Note: It may not be clear, but the commands between {@code goto B} and
- * {@code goto D} were removed as they were duplicates of what was before D's
- * label and D's label was moved back.
- *
- * 3)
- *
- * if (A) goto B<br />
- * if (C) goto B
- *
- * ...turns into...
- *
- * if ((A) || (C)) goto B
- */
 public final class CStructurize {
+
+	/**
+	 * This class is all about making the flow of the code follow normal
+	 * if/else/while/do conventions.
+	 *
+	 * Different ways to do this:
+	 *
+	 * 1)
+	 *
+	 * if (A) goto B<br />
+	 * ...<br />
+	 * goto C<br />
+	 * ...<br />
+	 * C:
+	 *
+	 * ...turns into...
+	 *
+	 * if (A) goto B<br />
+	 * goto C<br />
+	 * ...<br />
+	 * goto D<br />
+	 * C:<br />
+	 * ...
+	 *
+	 * Note: It may not be clear, but the commands between {@code goto B} and
+	 * {@code goto C} were moved to after the C label.
+	 *
+	 * 2)
+	 *
+	 * if (A) goto B<br />
+	 * C...<br />
+	 * goto D<br />
+	 * ...<br />
+	 * C...<br />
+	 * D:
+	 *
+	 * ...turns into...
+	 *
+	 * if (A) goto B<br />
+	 * goto C<br />
+	 * ...<br />
+	 * D:<br />
+	 * C...<br />
+	 * ...
+	 *
+	 * Note: It may not be clear, but the commands between {@code goto B} and
+	 * {@code goto D} were removed as they were duplicates of what was before D's
+	 * label and D's label was moved back.
+	 *
+	 * 3)
+	 *
+	 * if (A) goto B<br />
+	 * if (C) goto B
+	 *
+	 * ...turns into...
+	 *
+	 * if ((A) || (C)) goto B
+	 */
+
+	// TODO: if
+
+	// TODO: for loop
+	// $r = <initialize>
+	// goto A
+	// B:
+	// $r += <incrememnt>
+	// A:
+	// ...
+	// if (condition) goto B
+
+	// TODO: do while loop
+	// A:
+	// ...
+	// if (condition) goto A
 
 	private CStructurize() {
 	}
@@ -82,8 +99,12 @@ public final class CStructurize {
 
 		final AssemblyIterator iterator = holder.getAssemblyRepresentationsIterator();
 
-		// skip over label 0, as it shouldn't be changed
-		iterator.next();
+		// skip over label 0, as it shouldn't be changed when it exists
+		if (iterator.hasNext()) {
+			if (iterator.get(1).getRepresentation() instanceof LabelCommand) {
+				iterator.next();
+			}
+		}
 
 		while (iterator.hasNext()) {
 			final AssemblyRepresentation representation = iterator.next();
@@ -186,6 +207,12 @@ public final class CStructurize {
 
 	private static boolean simplifyIfGotoIfGotoPattern(IfCommand if1, AssemblyIterator iterator) {
 		final AssemblyRepresentation next = iterator.nextRepresentation();
+
+		// reach end
+		if (next == null) {
+			return false;
+		}
+
 		final AbstractCommand nextCommand = next.getRepresentation();
 
 		if (!(nextCommand instanceof IfCommand)) {

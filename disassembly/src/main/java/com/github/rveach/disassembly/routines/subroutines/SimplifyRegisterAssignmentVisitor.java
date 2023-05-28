@@ -49,6 +49,11 @@ public final class SimplifyRegisterAssignmentVisitor
 		return INSTANCE;
 	}
 
+	// to reset testing
+	public void reset() {
+		this.tracker = null;
+	}
+
 	@Override
 	protected void beginInit(AssemblyIterator iterator) {
 		this.result = false;
@@ -64,15 +69,6 @@ public final class SimplifyRegisterAssignmentVisitor
 		this.originalAssignment = ((OperationCommand) this.originalCommand).getLeftOperand();
 		this.originalAssignnee = ((OperationCommand) this.originalCommand).getRightOperand();
 		this.originalAssignneeRegisters = this.originalAssignnee.getRegistersInvolved();
-	}
-
-	@Override
-	protected void end(AssemblyIterator iterator, boolean reachedEndOfIterator) {
-		// if we hit the end, assume everything is used as we don't know how the
-		// variables will be used in other functions
-		if (reachedEndOfIterator) {
-			this.result = true;
-		}
 	}
 
 	@Override

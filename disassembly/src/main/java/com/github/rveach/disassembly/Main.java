@@ -30,7 +30,7 @@ public final class Main {
 	private Main() {
 	}
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String... arguments) throws IOException {
 		final CliOptions cliOptions = new CliOptions();
 		final CommandLine commandLine = new CommandLine(cliOptions);
 
@@ -42,7 +42,7 @@ public final class Main {
 		commandLine.registerConverter(Long.TYPE, Long::decode);
 
 		try {
-			final ParseResult parseResult = commandLine.parseArgs(args);
+			final ParseResult parseResult = commandLine.parseArgs(arguments);
 
 			if (parseResult.isUsageHelpRequested()) {
 				commandLine.usage(System.out);
@@ -52,6 +52,16 @@ public final class Main {
 		} catch (final PicocliException ex) {
 			System.err.println(ex.getMessage());
 		}
+	}
+
+	// for testing
+	protected static Holder process(AssemblyType assemblyType, boolean skipAllSimplifies, byte[] buffer) {
+		final CliOptions options = new CliOptions();
+
+		options.assemblyType = assemblyType;
+		options.skipAllSimplifies = skipAllSimplifies;
+
+		return options.process(buffer);
 	}
 
 	@Command(name = "assembly", description = "Programs that extracts assembly to help debugging.", mixinStandardHelpOptions = true)
@@ -78,11 +88,14 @@ public final class Main {
 		@Option(required = true, names = "-o", description = "Specifies the file to output to.")
 		private File outputFile;
 
+		@Option(names = "-skipAllSimplifies", description = "Specifies the file to output to.")
+		private boolean skipAllSimplifies;
+
 		public void process() throws IOException {
 			final List<String> messages = validate();
 
 			if (messages.isEmpty()) {
-				execute();
+				createOutput();
 			} else {
 				for (final String message : messages) {
 					System.err.println(message);
@@ -109,69 +122,78 @@ public final class Main {
 			return results;
 		}
 
-		private void execute() throws FileNotFoundException, IOException {
+		private void createOutput() throws FileNotFoundException, IOException {
 			try (final RandomAccessFile reader = new RandomAccessFile(this.inputFile, "r")) {
 				try (FileWriter writer = new FileWriter(this.outputFile);
 						BufferedWriter bw = new BufferedWriter(writer)) {
 
 					startOutput(writer);
 
-					final Holder holder = new Holder();
 					final byte[] buffer = initializeInput(reader);
 
-					// assemble
-
-					switch (this.assemblyType) {
-					case PSX:
-						PsxAssembly.execute(holder, this.startPosition, (int) this.offset, buffer);
-						break;
-					}
-
-					// simplify on basic assembly
-
-					AssemblySimplify.execute(holder);
-
-					// simplify on basic, system specific assembly
-
-					switch (this.assemblyType) {
-					case PSX:
-						PsxAssemblySimplify.execute(holder);
-						break;
-					}
-
-					// save original C for display purposes before we begin any modifications
-
-					SaveOriginalC.execute(holder);
-
-					// fix system specific assembly
-
-					switch (this.assemblyType) {
-					case PSX:
-						PsxAssemblyFix.execute(holder);
-						break;
-					}
-
-					boolean changed;
-
-					do {
-						changed = false;
-
-						while (CSimplify.execute(holder)) {
-							changed = true;
-						}
-
-						while (CStructurize.execute(holder)) {
-							changed = true;
-						}
-
-						while (CSimplifyMore.execute(holder)) {
-							// nothing to do
-						}
-					} while (changed);
+					final Holder holder = process(buffer);
 
 					holder.output(writer, this.assemblyType);
 				}
 			}
+		}
+
+		private Holder process(byte[] buffer) {
+			final Holder holder = new Holder();
+
+			// assemble
+
+			switch (this.assemblyType) {
+			case PSX:
+				PsxAssembly.execute(holder, this.startPosition, (int) this.offset, buffer);
+				break;
+			}
+
+			if (!this.skipAllSimplifies) {
+				// simplify on basic assembly
+
+				AssemblySimplify.execute(holder);
+
+				// simplify on basic, system specific assembly
+
+				switch (this.assemblyType) {
+				case PSX:
+					PsxAssemblySimplify.execute(holder);
+					break;
+				}
+
+				// save original C for display purposes before we begin any modifications
+
+				SaveOriginalC.execute(holder);
+
+				// fix system specific assembly
+
+				switch (this.assemblyType) {
+				case PSX:
+					PsxAssemblyFix.execute(holder);
+					break;
+				}
+
+				boolean changed;
+
+				do {
+					changed = false;
+
+					while (CSimplify.execute(holder)) {
+						changed = true;
+					}
+
+					while (CStructurize.execute(holder)) {
+						changed = true;
+					}
+
+					while (CSimplifyMore.execute(holder)) {
+						// nothing to do
+					}
+				} while (changed);
+			}
+
+			return holder;
 		}
 
 		private void startOutput(FileWriter writer) throws IOException {

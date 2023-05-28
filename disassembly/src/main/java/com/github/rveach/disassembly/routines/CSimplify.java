@@ -27,7 +27,7 @@ public final class CSimplify {
 	 *
 	 * 1)
 	 *
-	 * NOPs not connected to any code.
+	 * NOPs not connected to any code are removed.
 	 *
 	 * 2)
 	 *
@@ -107,8 +107,12 @@ public final class CSimplify {
 
 		final AssemblyIterator iterator = holder.getAssemblyRepresentationsIterator();
 
-		// skip over label 0, as it shouldn't be changed
-		iterator.next();
+		// skip over label 0, as it shouldn't be changed when it exists
+		if (iterator.hasNext()) {
+			if (iterator.get(1).getRepresentation() instanceof LabelCommand) {
+				iterator.next();
+			}
+		}
 
 		while (iterator.hasNext()) {
 			final AssemblyRepresentation representation = iterator.next();

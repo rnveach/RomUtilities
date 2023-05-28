@@ -49,6 +49,11 @@ public final class SimplifyHardcodedRegisterAssignmentVisitor
 		return INSTANCE;
 	}
 
+	// to reset testing
+	public void reset() {
+		this.tracker = null;
+	}
+
 	@Override
 	public SimplifyHardcodedRegisterAssignmentVisitor clone() {
 		return new SimplifyHardcodedRegisterAssignmentVisitor(this);

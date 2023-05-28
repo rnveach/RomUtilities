@@ -107,13 +107,15 @@ public class AssemblyIterator implements Iterator<AssemblyRepresentation> {
 	}
 
 	public AssemblyRepresentation nextRepresentation() {
-		while (true) {
+		while (hasNext()) {
 			final AssemblyRepresentation item = next();
 
 			if (!(item.getRepresentation() instanceof NopCommand)) {
 				return item;
 			}
 		}
+
+		return null;
 	}
 
 	public int findLabelPosition(int location) {

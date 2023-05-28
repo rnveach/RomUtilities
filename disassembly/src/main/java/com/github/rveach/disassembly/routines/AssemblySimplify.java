@@ -79,7 +79,7 @@ public final class AssemblySimplify {
 				final int address = assembly.getAddress();
 
 				if ((labels.contains(address)) || (first)) {
-					iterator.add(0, getLabel(address));
+					iterator.add(0, createLabel(address));
 				}
 
 				first = false;
@@ -87,7 +87,7 @@ public final class AssemblySimplify {
 		}
 	}
 
-	private static AssemblyRepresentation getLabel(int address) {
+	private static AssemblyRepresentation createLabel(int address) {
 		return new AssemblyRepresentation(0, 0, 0, "", new LabelCommand(address));
 	}
 
