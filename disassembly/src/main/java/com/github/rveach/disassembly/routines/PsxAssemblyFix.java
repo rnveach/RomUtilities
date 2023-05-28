@@ -7,6 +7,7 @@ import com.github.rveach.disassembly.operations.AbstractCommand;
 import com.github.rveach.disassembly.operations.GotoCommand;
 import com.github.rveach.disassembly.operations.HardcodeValueCommand;
 import com.github.rveach.disassembly.operations.IfCommand;
+import com.github.rveach.disassembly.operations.JumpSubroutineCommand;
 import com.github.rveach.disassembly.operations.LabelCommand;
 import com.github.rveach.disassembly.operations.NopCommand;
 import com.github.rveach.disassembly.operations.NotCommand;
@@ -49,6 +50,8 @@ import com.github.rveach.disassembly.operations.OperationCommand;
  * Note: (a) depends on if re-arranging C would change the type of logic check
  * done in A or not. If it would change it, then (b) must be done instead as a
  * "special swap".
+ *
+ * Note: This same logic is also used for {@code JAL}.
  */
 public final class PsxAssemblyFix {
 
@@ -69,7 +72,8 @@ public final class PsxAssemblyFix {
 
 	private static AssemblyIterator reorderBranches(AssemblyIterator iterator, AssemblyRepresentation representation,
 			AbstractCommand command) {
-		if ((command instanceof IfCommand) || (command instanceof GotoCommand)) {
+		if ((command instanceof IfCommand) || (command instanceof GotoCommand)
+				|| (command instanceof JumpSubroutineCommand)) {
 			AssemblyRepresentation nextRepresentation = iterator.get(1);
 			AbstractCommand nextCommand = nextRepresentation.getRepresentation();
 			LabelCommand labelCommand = null;
@@ -86,7 +90,8 @@ public final class PsxAssemblyFix {
 			// ignore if next command is nop as they don't do anything
 			if (!(nextCommand instanceof NopCommand)) {
 				// more code is needed if next command has a delay too
-				if ((nextCommand instanceof IfCommand) || (nextCommand instanceof GotoCommand)) {
+				if ((nextCommand instanceof IfCommand) || (nextCommand instanceof GotoCommand)
+						|| (nextCommand instanceof JumpSubroutineCommand)) {
 					throw new IllegalStateException("Mulitple delay commands not implemented");
 				}
 
@@ -103,6 +108,10 @@ public final class PsxAssemblyFix {
 				}
 
 				if (specialSwapNeeded) {
+					if (command instanceof JumpSubroutineCommand) {
+						throw new IllegalStateException("Special swap for Jump Subroutine not implemented");
+					}
+
 					applySpecialSwap(iterator, (IfCommand) command, nextRepresentation, nextCommand, labelCommand);
 				} else {
 					// normal swap of order
@@ -127,12 +136,23 @@ public final class PsxAssemblyFix {
 			// is registers in next left assignment used in original condition
 
 			final OperationCommand operation = ((OperationCommand) nextCommand);
-			final AbstractCommand condition = ((IfCommand) command).getCondition();
 
 			if (operation.getOperation() == Operation.ASSIGNMENT) {
 				final AbstractCommand left = operation.getLeftOperand();
 
-				result = condition.contains(left);
+				if (command instanceof IfCommand) {
+					final AbstractCommand condition = ((IfCommand) command).getCondition();
+
+					result = condition.contains(left);
+				} else {
+					final AbstractCommand location = ((JumpSubroutineCommand) command).getTarget();
+
+					if (location instanceof HardcodeValueCommand) {
+						result = false;
+					} else {
+						result = location.contains(left);
+					}
+				}
 			} else {
 				result = false;
 			}

@@ -99,4 +99,23 @@ public final class PsxAssemblyFixTest extends AbstractInstructionTest {
 		);
 	}
 
+	@Test
+	public void testCall() {
+		assertPsxCompleteProcess(//
+				Arrays.asList(//
+						"CE E3 00 0C", //
+						"21 80 00 00"), //
+				Arrays.asList(//
+						"jal   0x38F38", //
+						"move  $s0, $r0"), //
+				Arrays.asList(//
+						"$ra <- 0x38F38()", //
+						"$s0 = $r0"), //
+				Arrays.asList(//
+						"$s0 = 0", //
+						"$ra <- 0x38F38()" //
+				)//
+		);
+	}
+
 }
