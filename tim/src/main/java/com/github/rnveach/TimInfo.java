@@ -120,7 +120,7 @@ public final class TimInfo {
 		final int imageOrgX = Util.read16LE(BUFFER, 4);
 		final int imageOrgY = Util.read16LE(BUFFER, 6);
 		final int encodedImageWidth = Util.read16LE(BUFFER, 8);
-		final int imageHeight = Util.read16LE(BUFFER, 8);
+		final int imageHeight = Util.read16LE(BUFFER, 10);
 
 		System.out.println("Image Data Size: " + Util.hex(imageDataSize));
 		System.out.println("Image Org X: " + Util.hex(imageOrgX));
