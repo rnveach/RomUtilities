@@ -42,7 +42,7 @@ public final class Util {
 		return b1;
 	}
 
-	public static int read16HE(byte[] buffer, int start) {
+	public static int read16BE(byte[] buffer, int start) {
 		final int b1 = buffer[start + 0] & 0xFF;
 		final int b2 = buffer[start + 1] & 0xFF;
 
@@ -54,6 +54,11 @@ public final class Util {
 		final int b2 = buffer[start + 1] & 0xFF;
 
 		return (b2 << 8) | b1;
+	}
+
+	public static void write16LE(byte[] buffer, int start, int value) {
+		buffer[start + 0] = (byte) (value & 0xFF);
+		buffer[start + 1] = (byte) ((value >> 8) & 0xFF);
 	}
 
 	public static int read24LE(byte[] buffer, int start) {
@@ -71,6 +76,22 @@ public final class Util {
 		final int b4 = buffer[start + 3] & 0xFF;
 
 		return (b4 << 24) | (b3 << 16) | (b2 << 8) | b1;
+	}
+
+	public static int read32BE(byte[] buffer, int start) {
+		final int b1 = buffer[start + 0] & 0xFF;
+		final int b2 = buffer[start + 1] & 0xFF;
+		final int b3 = buffer[start + 2] & 0xFF;
+		final int b4 = buffer[start + 3] & 0xFF;
+
+		return (b1 << 24) | (b2 << 16) | (b3 << 8) | b4;
+	}
+
+	public static void write32LE(byte[] buffer, int start, int value) {
+		buffer[start + 0] = (byte) (value & 0xFF);
+		buffer[start + 1] = (byte) ((value >> 8) & 0xFF);
+		buffer[start + 2] = (byte) ((value >> 16) & 0xFF);
+		buffer[start + 3] = (byte) ((value >> 24) & 0xFF);
 	}
 
 	public static String hexRaw(int number) {
