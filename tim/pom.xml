@@ -1,4 +1,6 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.github.rnveach</groupId>
@@ -11,9 +13,18 @@
 
 		<java.version>11</java.version>
 
+		<picocli.plugin.version>4.7.6</picocli.plugin.version>
 		<maven.resources.plugin.version>3.3.1</maven.resources.plugin.version>
 		<maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
 	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>info.picocli</groupId>
+			<artifactId>picocli</artifactId>
+			<version>${picocli.plugin.version}</version>
+		</dependency>
+	</dependencies>
 
 	<build>
 		<pluginManagement>
