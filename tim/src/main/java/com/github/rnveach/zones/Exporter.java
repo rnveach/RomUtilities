@@ -1,9 +1,13 @@
 package com.github.rnveach.zones;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.net.MalformedURLException;
 import java.util.List;
 
 import com.github.rnveach.utils.Util;
@@ -55,6 +59,7 @@ public final class Exporter {
 			if ((BPP == 8) || (BPP == 9)) {
 				// has clut
 
+				// check zone has required clut number
 				if ((zone.getClutNumber() == null) && (zone.getClutUri() == null)) {
 					if ((NUMBER_OF_CLUTS > 1) || (NUMBER_OF_CLUTS == 0)) {
 						System.err.println(
@@ -69,17 +74,71 @@ public final class Exporter {
 					}
 				}
 			}
-
-			// TODO: overlapping zones
-
-			// TODO: missing gaps
 		}
 
 		return true;
 	}
 
-	private static void export(File parent, String exportFilePrefix, TimZone zone) {
-		// TODO
+	private static void export(File parent, String exportFilePrefix, TimZone zone)
+			throws FileNotFoundException, IOException {
+		final File saveFile = new File(parent, exportFilePrefix + "_" + zone.getName() + ".tim");
+
+		try (FileOutputStream writer = new FileOutputStream(saveFile)) {
+			writeHeader(writer);
+
+			if ((BPP == 8) || (BPP == 9)) {
+				final byte[] newClutData = getClutToWrite(zone);
+
+				writeClut(writer, newClutData);
+			}
+
+			final byte[] newImageData = getImageToWrite(zone);
+
+			writeImage(writer, zone, newImageData);
+		}
+	}
+
+	private static byte[] getClutToWrite(TimZone zone) throws MalformedURLException, IOException {
+		// assume there is just the one since we pre-checked
+		if ((zone.getClutNumber() == null) && (zone.getClutUri() == null)) {
+			return CLUT_DATA;
+		}
+
+		if (zone.getClutNumber() != null) {
+			// get internal clut by number
+
+			if ((zone.getClutNumber() == 1) && (NUMBER_OF_CLUTS == 1)) {
+				return CLUT_DATA;
+			}
+
+			final byte[] results = new byte[2 * COLORS_PER_CLUT];
+
+			System.arraycopy(CLUT_DATA, results.length * zone.getClutNumber(), results, 0, results.length);
+
+			return results;
+		} else {
+			// read in new clut
+
+			try (InputStream is = zone.getClutUri().toURL().openStream()) {
+				final ByteArrayOutputStream content = new ByteArrayOutputStream();
+
+				while (true) {
+					final int size = is.read(BUFFER);
+					if (size == -1) {
+						break;
+					}
+
+					content.write(BUFFER, 0, size);
+				}
+
+				return content.toByteArray();
+			}
+		}
+	}
+
+	private static byte[] getImageToWrite(TimZone zone) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	private static void readHeader(RandomAccessFile reader) throws IOException {
@@ -102,6 +161,17 @@ public final class Exporter {
 		}
 	}
 
+	private static void writeHeader(FileOutputStream writer) throws IOException {
+		writer.write(0x10);
+		writer.write(0);
+		writer.write(0);
+		writer.write(0);
+		writer.write(BPP);
+		writer.write(0);
+		writer.write(0);
+		writer.write(0);
+	}
+
 	private static void readClut(RandomAccessFile reader) throws IOException {
 		if (reader.read(BUFFER, 0, 12) != 12) {
 			throw new IndexOutOfBoundsException("File too short for clut header");
@@ -118,6 +188,20 @@ public final class Exporter {
 		}
 	}
 
+	private static void writeClut(FileOutputStream writer, byte[] newClutData) throws IOException {
+		Util.write32LE(BUFFER, 0, 12 + newClutData.length);
+		// palette org x
+		Util.write16LE(BUFFER, 4, 0);
+		// palette org y
+		Util.write16LE(BUFFER, 6, 0);
+		Util.write16LE(BUFFER, 8, COLORS_PER_CLUT);
+		// new number of cluts
+		Util.write16LE(BUFFER, 10, 1);
+
+		writer.write(BUFFER, 0, 12);
+		writer.write(newClutData);
+	}
+
 	private static void readImage(RandomAccessFile reader) throws IOException {
 		if (reader.read(BUFFER, 0, 12) != 12) {
 			throw new IndexOutOfBoundsException("File too short for image data");
@@ -132,6 +216,19 @@ public final class Exporter {
 		if (reader.read(IMAGE_DATA) != imageDataSize) {
 			throw new IndexOutOfBoundsException("File too short for image data");
 		}
+	}
+
+	private static void writeImage(FileOutputStream writer, TimZone zone, byte[] newImageData) throws IOException {
+		Util.write32LE(BUFFER, 0, 12 + newImageData.length);
+		// image org x
+		Util.write16LE(BUFFER, 4, 0);
+		// image org y
+		Util.write16LE(BUFFER, 6, 0);
+		Util.write16LE(BUFFER, 8, zone.getWidth());
+		Util.write16LE(BUFFER, 10, zone.getHeight());
+
+		writer.write(BUFFER, 0, 12);
+		writer.write(newImageData);
 	}
 
 	private static int getActualImageWidth(int bpp, int encodedImageWidth) {

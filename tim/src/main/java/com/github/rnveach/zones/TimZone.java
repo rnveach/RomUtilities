@@ -95,6 +95,26 @@ public final class TimZone implements Comparable<TimZone> {
 
 		Collections.sort(results);
 
+		for (final TimZone zone : results) {
+			for (final TimZone secondZone : results) {
+				if (zone != secondZone) {
+					// duplicate names
+					if (zone.getName().equals(secondZone.getName())) {
+						System.err.println("2 identical Zones are named " + zone.getName());
+						return null;
+					}
+
+					// check for overlapping zones
+					if (zone.isOverlapping(secondZone)) {
+						System.err.println("Zone " + zone.getName() + " overlaps Zone " + secondZone.getName());
+						return null;
+					}
+				}
+			}
+
+			// TODO: missing gaps
+		}
+
 		return results;
 	}
 
@@ -195,6 +215,20 @@ public final class TimZone implements Comparable<TimZone> {
 		} catch (final Throwable t) {
 			return null;
 		}
+	}
+
+	public int getWidth() {
+		// inclusive
+		return (this.x2 - this.x1) + 1;
+	}
+
+	public int getHeight() {
+		// inclusive
+		return (this.y2 - this.y1) + 1;
+	}
+
+	public boolean isOverlapping(TimZone o) {
+		return (this.x1 <= o.x2) && (this.x2 >= o.x1) && (this.y1 >= o.y2) && (this.y2 <= o.y1);
 	}
 
 	public String getName() {
