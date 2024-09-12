@@ -1,7 +1,7 @@
 package com.github.rveach.disassembly;
 
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 
 import com.github.rveach.disassembly.operations.AbstractCommand;
 import com.github.rveach.disassembly.operations.LabelCommand;
@@ -35,7 +35,7 @@ public final class AssemblyRepresentation {
 		this.saveRepresentation = null;
 	}
 
-	public void output(FileWriter writer, AssemblyType assemblyType) throws IOException {
+	public void output(Writer writer, AssemblyType assemblyType) throws IOException {
 		final boolean isLabel = this.representation instanceof LabelCommand;
 		String finalDisplay = this.representation.getDisplay();
 		final String display;
@@ -92,7 +92,7 @@ public final class AssemblyRepresentation {
 		writer.write("\r\n");
 	}
 
-	private void writeRawHex(FileWriter writer) throws IOException {
+	private void writeRawHex(Writer writer) throws IOException {
 		int temp = this.assembly;
 
 		for (int i = 0; i < this.assemblySize; i++) {
@@ -107,7 +107,7 @@ public final class AssemblyRepresentation {
 		}
 	}
 
-	private static void writeVariableSpaces(FileWriter writer, int size) throws IOException {
+	private static void writeVariableSpaces(Writer writer, int size) throws IOException {
 		final int spaces = Math.max(size, 1);
 
 		for (int i = 0; i < spaces; i++) {

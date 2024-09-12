@@ -1,7 +1,7 @@
 package com.github.rveach.disassembly;
 
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.List;
 
 public final class Holder {
@@ -22,7 +22,7 @@ public final class Holder {
 		this.assemblyRepresentations = assemblyRepresentations;
 	}
 
-	public void output(FileWriter writer, AssemblyType assemblyType) throws IOException {
+	public void output(Writer writer, AssemblyType assemblyType) throws IOException {
 		for (final AssemblyRepresentation item : this.assemblyRepresentations) {
 			item.output(writer, assemblyType);
 		}

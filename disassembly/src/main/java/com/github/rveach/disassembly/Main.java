@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -124,9 +125,7 @@ public final class Main {
 
 		private void createOutput() throws FileNotFoundException, IOException {
 			try (final RandomAccessFile reader = new RandomAccessFile(this.inputFile, "r")) {
-				try (FileWriter writer = new FileWriter(this.outputFile);
-						BufferedWriter bw = new BufferedWriter(writer)) {
-
+				try (FileWriter fw = new FileWriter(this.outputFile); BufferedWriter writer = new BufferedWriter(fw)) {
 					startOutput(writer);
 
 					final byte[] buffer = initializeInput(reader);
@@ -196,7 +195,7 @@ public final class Main {
 			return holder;
 		}
 
-		private void startOutput(FileWriter writer) throws IOException {
+		private void startOutput(Writer writer) throws IOException {
 			writer.write("File:   " + this.inputFile + "\r\n");
 			writer.write("Start:  " + Util.hex(this.startPosition) + "\r\n");
 			writer.write("End:    " + Util.hex(this.endPosition) + "\r\n");
