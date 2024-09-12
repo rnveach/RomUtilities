@@ -231,6 +231,21 @@ public final class TimZone implements Comparable<TimZone> {
 		return (this.x1 <= o.x2) && (this.x2 >= o.x1) && (this.y1 >= o.y2) && (this.y2 <= o.y1);
 	}
 
+	public int getEncodedWidth(int bpp) {
+		switch (bpp) {
+		case 8:
+			return getWidth() / 4;
+		case 9:
+			return getWidth() / 2;
+		case 2:
+			return getWidth();
+		case 3:
+			return (int) (getWidth() / 1.5);
+		}
+
+		throw new IllegalStateException("Unknown BPP: " + bpp);
+	}
+
 	public String getName() {
 		return this.name;
 	}
