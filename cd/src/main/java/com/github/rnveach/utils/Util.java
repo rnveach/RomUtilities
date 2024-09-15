@@ -18,6 +18,14 @@ public final class Util {
 		return fileName;
 	}
 
+	public static String readStringDataFromInput(String line, String lineText) {
+		if (!line.startsWith(lineText + ":")) {
+			throw new IllegalStateException("Unexpected input, expected '" + lineText + "' in: " + line);
+		}
+
+		return line.substring(lineText.length() + 1).trim();
+	}
+
 	public static String readString(byte[] buffer, int start, int length) {
 		final StringBuilder result = new StringBuilder(length);
 
