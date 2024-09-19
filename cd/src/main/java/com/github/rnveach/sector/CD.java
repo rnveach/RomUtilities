@@ -1,6 +1,10 @@
 package com.github.rnveach.sector;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
@@ -8,6 +12,9 @@ import java.util.Arrays;
 public final class CD {
 
 	public static final int SECTOR_SIZE = 2352;
+
+	private static final int WRITE_BUFFER_LENGTH = CD.SECTOR_SIZE * 5;
+	private static final byte[] WRITE_BUFFER = new byte[WRITE_BUFFER_LENGTH];
 
 	public static final byte[] EMPTY_SYNC = new byte[] { //
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 //
@@ -96,6 +103,8 @@ public final class CD {
 					this.reader.read(this.mode2Form2Data);
 					this.reader.read(this.edcData);
 					break;
+				default:
+					throw new IllegalStateException("Unknown sector mode 2 form: " + this.sectorModeForm);
 				}
 				break;
 			default:
@@ -108,7 +117,7 @@ public final class CD {
 		this.currentSectorNumber++;
 	}
 
-	public void writeSector(OutputStream writer) throws IOException {
+	public void writeSectorTo(OutputStream writer) throws IOException {
 		if (this.sectorMode == 0) {
 			writer.write(getCurrentData());
 		} else {
@@ -140,6 +149,77 @@ public final class CD {
 		}
 	}
 
+	public void overlayWithFile(File insertFile, boolean rawSectors) throws IOException {
+		if (rawSectors) {
+			try (InputStream inputStream = new FileInputStream(insertFile)) {
+				int amountRead;
+
+				while ((amountRead = inputStream.read(WRITE_BUFFER)) != -1) {
+					this.reader.write(WRITE_BUFFER, 0, amountRead);
+				}
+			}
+		} else {
+			inspectSectorsAndOverlayWithFile(insertFile);
+		}
+	}
+
+	private void inspectSectorsAndOverlayWithFile(File insertFile) throws FileNotFoundException, IOException {
+		int size = (int) insertFile.length();
+
+		try (InputStream inputStream = new FileInputStream(insertFile)) {
+			while (size > 0) {
+				if (this.reader.read(BUFFER_SYNC) != BUFFER_SYNC.length) {
+					throw new IllegalStateException("Failed to fully read sync");
+				}
+
+				if (Arrays.equals(BUFFER_SYNC, EMPTY_SYNC)) {
+					throw new IllegalStateException("Not Implemented");
+				} else if (Arrays.equals(BUFFER_SYNC, SYNC)) {
+					// MSF
+					this.reader.skipBytes(3);
+
+					this.sectorMode = this.reader.read();
+
+					switch (this.sectorMode) {
+					case 1:
+						throw new IllegalStateException("Not implemented");
+					case 2:
+						this.sectorModeForm = identifyMode2Form();
+
+						switch (this.sectorModeForm) {
+						case 0:
+							throw new IllegalStateException("Not implemented");
+						case 1:
+							final int amountRead = inputStream.read(this.mode2Form1Data);
+
+							size -= amountRead;
+
+							if ((size == 0) && (amountRead < this.mode2Form1Data.length)) {
+								this.reader.write(this.mode0Data, amountRead, this.mode2Form1Data.length - amountRead);
+							}
+
+							this.reader.write(this.mode2Form1Data);
+
+							// TODO: calculate edc and ecc
+							this.reader.skipBytes(this.edcData.length);
+							this.reader.skipBytes(this.eccData.length);
+							break;
+						case 2:
+							throw new IllegalStateException("Not implemented");
+						default:
+							throw new IllegalStateException("Unknown sector mode 2 form: " + this.sectorModeForm);
+						}
+						break;
+					default:
+						throw new IllegalStateException("Unknown sector mode: " + this.sectorMode);
+					}
+				} else {
+					throw new IllegalStateException("Sector has no sync");
+				}
+			}
+		}
+	}
+
 	private int identifyMode2Form() throws IOException {
 		this.reader.read(this.mode2Sh);
 
@@ -161,6 +241,10 @@ public final class CD {
 
 	private static boolean hasBitMask(int bits, int mask) {
 		return (bits & mask) == mask;
+	}
+
+	public RandomAccessFile getReader() {
+		return this.reader;
 	}
 
 	public int getCurrentSectorNumber() {

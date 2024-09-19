@@ -137,7 +137,7 @@ public final class ExtractFiles {
 				cd.readSector();
 			}
 
-			cd.writeSector(writer);
+			cd.writeSectorTo(writer);
 
 			sectors--;
 		}

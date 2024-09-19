@@ -72,6 +72,33 @@ public final class CdDirectoryListing {
 		}
 	}
 
+	public boolean updateNextEntrySimple(String verifyName, int verifyEntrySector, int newEntrySize) {
+		if (!hasNext()) {
+			throw new IllegalStateException("Could not update " + verifyName + " as it doesn't exist");
+		}
+
+		final int nameLength = this.data[this.dataPosition + 32];
+
+		// verifies only start of name since it can have extra data on it
+		if (!Util.readString(this.data, this.dataPosition + 33, nameLength).startsWith(verifyName)) {
+			throw new IllegalStateException(
+					"Could not update " + verifyName + " as the name wasn't found at the same position");
+		}
+
+		if (Util.read32LE(this.data, this.dataPosition + 2) != verifyEntrySector) {
+			throw new IllegalStateException("Could not update " + verifyName + " as the sector position didn't match");
+		}
+
+		if (Util.read32LE(this.data, this.dataPosition + 10) != newEntrySize) {
+			Util.write32LE(this.data, this.dataPosition + 10, newEntrySize);
+			Util.write32BE(this.data, this.dataPosition + 14, newEntrySize);
+
+			return true;
+		} else {
+			return false;
+		}
+	}
+
 	public boolean isEntryDirectory() {
 		return ((this.entryFlags & 0x02) == 0x02);
 	}

@@ -102,6 +102,13 @@ public final class Util {
 		buffer[start + 3] = (byte) ((value >> 24) & 0xFF);
 	}
 
+	public static void write32BE(byte[] buffer, int start, int value) {
+		buffer[start + 0] = (byte) ((value >> 24) & 0xFF);
+		buffer[start + 1] = (byte) ((value >> 16) & 0xFF);
+		buffer[start + 2] = (byte) ((value >> 8) & 0xFF);
+		buffer[start + 3] = (byte) (value & 0xFF);
+	}
+
 	public static String hexRaw(int number) {
 		return String.format("%X", number);
 	}
