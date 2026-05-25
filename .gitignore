@@ -1,6 +1,7 @@
 # Eclipse files
 
 .metadata/
+.sonarlint/
 .classpath
 org.eclipse.core.resources.prefs
 org.eclipse.m2e.core.prefs
